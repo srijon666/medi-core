@@ -11,107 +11,49 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DialogHeader, DialogFooter, DialogTitle } from "@/components/ui/dialog";
+import { Calendar, Clock } from "lucide-react";
 
-interface NewAppointmentProps {
-  onAdd: (appointment: any) => void;
-  onCancel: () => void;
-}
-
-// Mock list of doctors for the select field
-const doctors = [
-  "Dr. James Wilson",
-  "Dr. Sarah Parker",
-  "Dr. Michael Chen",
-  "Dr. Elizabeth Taylor",
-  "Dr. Robert Johnson",
-];
-
-// Mock list of patients for the select field
-const patients = [
-  "Sarah Johnson",
-  "Mike Peterson",
-  "Emily Williams",
-  "Robert Thompson",
-  "Linda Garcia",
-  "John Smith",
-  "Mary Clark",
-];
-
-const NewAppointment = ({ onAdd, onCancel }: NewAppointmentProps) => {
+const RescheduleAppointment = ({ 
+  appointment, 
+  onReschedule, 
+  onCancel 
+}) => {
   const [formData, setFormData] = useState({
-    patientName: "",
-    doctorName: "",
-    date: "",
-    time: "",
-    type: "Consultation",
+    ...appointment
   });
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field, value) => {
     setFormData(prevData => ({
       ...prevData,
       [field]: value
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    onAdd(formData);
+    onReschedule(formData);
   };
 
   return (
     <form onSubmit={handleSubmit}>
       <DialogHeader>
-        <DialogTitle>New Appointment</DialogTitle>
+        <DialogTitle>Reschedule Appointment</DialogTitle>
       </DialogHeader>
 
-      <div className="grid gap-4 py-4">
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="patient" className="text-right">
-            Patient
-          </Label>
-          <Select
-            value={formData.patientName}
-            onValueChange={(value) => handleChange('patientName', value)}
-            required
-          >
-            <SelectTrigger id="patient" className="col-span-3">
-              <SelectValue placeholder="Select patient" />
-            </SelectTrigger>
-            <SelectContent>
-              {patients.map((patient) => (
-                <SelectItem key={patient} value={patient}>
-                  {patient}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <div className="space-y-6 py-4">
+        <div className="grid grid-cols-1 gap-4">
+          <div>
+            <h3 className="text-lg font-medium mb-2">{formData.patientName}</h3>
+            <p className="text-gray-600">
+              Current appointment with {formData.doctorName} on {formData.date} at {formData.time}
+            </p>
+          </div>
         </div>
-        
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="doctor" className="text-right">
-            Doctor
-          </Label>
-          <Select
-            value={formData.doctorName}
-            onValueChange={(value) => handleChange('doctorName', value)}
-            required
-          >
-            <SelectTrigger id="doctor" className="col-span-3">
-              <SelectValue placeholder="Select doctor" />
-            </SelectTrigger>
-            <SelectContent>
-              {doctors.map((doctor) => (
-                <SelectItem key={doctor} value={doctor}>
-                  {doctor}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
+
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="date" className="text-right">
-            Date
+            <Calendar className="h-4 w-4 inline mr-2" />
+            New Date
           </Label>
           <Input
             id="date"
@@ -125,12 +67,13 @@ const NewAppointment = ({ onAdd, onCancel }: NewAppointmentProps) => {
         
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="time" className="text-right">
-            Time
+            <Clock className="h-4 w-4 inline mr-2" />
+            New Time
           </Label>
           <Input
             id="time"
             type="time"
-            value={formData.time}
+            value={formData.time.replace(' AM', '').replace(' PM', '')}
             onChange={(e) => {
               // Convert 24hr format to 12hr with AM/PM
               const hours = parseInt(e.target.value.split(':')[0]);
@@ -165,16 +108,29 @@ const NewAppointment = ({ onAdd, onCancel }: NewAppointmentProps) => {
             </SelectContent>
           </Select>
         </div>
+        
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="doctor" className="text-right">
+            Doctor
+          </Label>
+          <Input
+            id="doctor"
+            value={formData.doctorName}
+            onChange={(e) => handleChange('doctorName', e.target.value)}
+            className="col-span-3"
+            required
+          />
+        </div>
       </div>
 
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit">Create Appointment</Button>
+        <Button type="submit">Reschedule</Button>
       </DialogFooter>
     </form>
   );
 };
 
-export default NewAppointment;
+export default RescheduleAppointment;

@@ -12,34 +12,20 @@ import {
 } from "@/components/ui/select";
 import { DialogHeader, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 
-interface EditMedicationFormProps {
-  medication: {
-    id: string;
-    name: string;
-    category: string;
-    stock: number;
-    price: string;
-    supplier: string;
-    status: string;
-  };
-  onUpdate: (medication: any) => void;
-  onCancel: () => void;
-}
-
-const EditMedicationForm = ({ medication, onUpdate, onCancel }: EditMedicationFormProps) => {
+const EditMedicationForm = ({ medication, onUpdate, onCancel }) => {
   const [formData, setFormData] = useState({
     ...medication,
     price: medication.price.replace('$', '')
   });
 
-  const handleChange = (field: string, value: string | number) => {
+  const handleChange = (field, value) => {
     setFormData(prevData => ({
       ...prevData,
       [field]: value
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     
     // Determine status based on stock

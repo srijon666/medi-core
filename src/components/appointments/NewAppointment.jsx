@@ -11,63 +11,76 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DialogHeader, DialogFooter, DialogTitle } from "@/components/ui/dialog";
-import { Calendar, Clock } from "lucide-react";
+import { Calendar, Clock, UserPlus } from "lucide-react";
 
-interface RescheduleAppointmentProps {
-  appointment: {
-    id: string;
-    patientName: string;
-    doctorName: string;
-    date: string;
-    time: string;
-    type: string;
-    status: string;
-  };
-  onReschedule: (appointment: any) => void;
-  onCancel: () => void;
-}
-
-const RescheduleAppointment = ({ 
-  appointment, 
-  onReschedule, 
-  onCancel 
-}: RescheduleAppointmentProps) => {
+const NewAppointment = ({ onAdd, onCancel }) => {
   const [formData, setFormData] = useState({
-    ...appointment
+    patientName: "",
+    doctorName: "",
+    date: "",
+    time: "",
+    type: "Consultation",
+    status: "Scheduled", // New appointments default to Scheduled
+    notes: "",
   });
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field, value) => {
     setFormData(prevData => ({
       ...prevData,
       [field]: value
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    onReschedule(formData);
+    
+    // Generate a simple ID
+    const newAppointment = {
+      ...formData,
+      id: `appt-${Date.now()}`
+    };
+    
+    onAdd(newAppointment);
   };
 
   return (
     <form onSubmit={handleSubmit}>
       <DialogHeader>
-        <DialogTitle>Reschedule Appointment</DialogTitle>
+        <DialogTitle>New Appointment</DialogTitle>
       </DialogHeader>
 
-      <div className="space-y-6 py-4">
-        <div className="grid grid-cols-1 gap-4">
-          <div>
-            <h3 className="text-lg font-medium mb-2">{formData.patientName}</h3>
-            <p className="text-gray-600">
-              Current appointment with {formData.doctorName} on {formData.date} at {formData.time}
-            </p>
-          </div>
+      <div className="grid gap-4 py-4">
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="patientName" className="text-right">
+            Patient Name
+          </Label>
+          <Input
+            id="patientName"
+            value={formData.patientName}
+            onChange={(e) => handleChange('patientName', e.target.value)}
+            className="col-span-3"
+            required
+          />
         </div>
-
+        
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="doctorName" className="text-right">
+            <UserPlus className="h-4 w-4 inline mr-2" />
+            Doctor
+          </Label>
+          <Input
+            id="doctorName"
+            value={formData.doctorName}
+            onChange={(e) => handleChange('doctorName', e.target.value)}
+            className="col-span-3"
+            required
+          />
+        </div>
+        
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="date" className="text-right">
             <Calendar className="h-4 w-4 inline mr-2" />
-            New Date
+            Date
           </Label>
           <Input
             id="date"
@@ -82,12 +95,12 @@ const RescheduleAppointment = ({
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="time" className="text-right">
             <Clock className="h-4 w-4 inline mr-2" />
-            New Time
+            Time
           </Label>
           <Input
             id="time"
             type="time"
-            value={formData.time.replace(' AM', '').replace(' PM', '')}
+            value={formData.time}
             onChange={(e) => {
               // Convert 24hr format to 12hr with AM/PM
               const hours = parseInt(e.target.value.split(':')[0]);
@@ -105,8 +118,8 @@ const RescheduleAppointment = ({
           <Label htmlFor="type" className="text-right">
             Type
           </Label>
-          <Select
-            value={formData.type}
+          <Select 
+            value={formData.type} 
             onValueChange={(value) => handleChange('type', value)}
           >
             <SelectTrigger id="type" className="col-span-3">
@@ -124,15 +137,15 @@ const RescheduleAppointment = ({
         </div>
         
         <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="doctor" className="text-right">
-            Doctor
+          <Label htmlFor="notes" className="text-right">
+            Notes
           </Label>
           <Input
-            id="doctor"
-            value={formData.doctorName}
-            onChange={(e) => handleChange('doctorName', e.target.value)}
+            id="notes"
+            value={formData.notes}
+            onChange={(e) => handleChange('notes', e.target.value)}
             className="col-span-3"
-            required
+            placeholder="Optional notes about this appointment"
           />
         </div>
       </div>
@@ -141,10 +154,10 @@ const RescheduleAppointment = ({
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit">Reschedule</Button>
+        <Button type="submit">Add Appointment</Button>
       </DialogFooter>
     </form>
   );
 };
 
-export default RescheduleAppointment;
+export default NewAppointment;
