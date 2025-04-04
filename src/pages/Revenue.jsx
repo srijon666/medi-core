@@ -76,7 +76,7 @@ const revenueByServiceData = [
   { name: "Pharmacy", value: 36000 },
 ];
 
-const formattedINR = (amount: number) => {
+const formattedINR = (amount) => {
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
@@ -86,8 +86,8 @@ const formattedINR = (amount: number) => {
 
 const Revenue = () => {
   const navigate = useNavigate();
-  const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toLocaleString('default', { month: 'long' }));
-  const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().toLocaleString('default', { month: 'long' }));
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   
   const currentMonthData = monthlyData[new Date().getMonth()];
   

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   Table, 
@@ -111,13 +110,13 @@ const Appointments = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isMarkCompleteDialogOpen, setIsMarkCompleteDialogOpen] = useState(false);
-  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
   const [appointmentsData, setAppointmentsData] = useState(appointments);
-  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState("all");
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false);
   const [isNewAppointmentModalOpen, setIsNewAppointmentModalOpen] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
 
   // Filter appointments based on search term and status filter
   const filteredAppointments = appointmentsData.filter(
@@ -133,7 +132,7 @@ const Appointments = () => {
     }
   );
 
-  const handleStatusChange = (appointmentId: string, newStatus: string) => {
+  const handleStatusChange = (appointmentId, newStatus) => {
     setAppointmentsData(prevData => 
       prevData.map(appointment => 
         appointment.id === appointmentId 
@@ -188,17 +187,17 @@ const Appointments = () => {
     });
   };
 
-  const handleViewDetails = (appointment: any) => {
+  const handleViewDetails = (appointment) => {
     setSelectedAppointment(appointment);
     setIsDetailsModalOpen(true);
   };
 
-  const handleReschedule = (appointment: any) => {
+  const handleReschedule = (appointment) => {
     setSelectedAppointment(appointment);
     setIsRescheduleModalOpen(true);
   };
 
-  const handleUpdateAppointment = (updatedAppointment: any) => {
+  const handleUpdateAppointment = (updatedAppointment) => {
     setAppointmentsData(prevData => 
       prevData.map(appointment => 
         appointment.id === updatedAppointment.id 
@@ -214,7 +213,7 @@ const Appointments = () => {
     });
   };
 
-  const handleAddAppointment = (newAppointment: any) => {
+  const handleAddAppointment = (newAppointment) => {
     setAppointmentsData(prev => [
       ...prev,
       { ...newAppointment, id: `A00${prev.length + 1}`, status: "scheduled" }
@@ -314,7 +313,7 @@ const Appointments = () => {
                           <Badge
                             className={cn(
                               "font-normal capitalize",
-                              statusStyles[appointment.status as keyof typeof statusStyles]
+                              statusStyles[appointment.status]
                             )}
                           >
                             {appointment.status}

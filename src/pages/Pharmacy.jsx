@@ -45,8 +45,6 @@ import {
   ShoppingCart
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import MedicationDetails from "@/components/pharmacy/MedicationDetails";
-import EditMedicationForm from "@/components/pharmacy/EditMedicationForm";
 import AddMedicationForm from "@/components/pharmacy/AddMedicationForm";
 
 // Mock pharmacy inventory data
@@ -116,9 +114,9 @@ const statusStyles = {
 const Pharmacy = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedMedicationId, setSelectedMedicationId] = useState<string | null>(null);
-  const [selectedMedication, setSelectedMedication] = useState<any>(null);
-  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [selectedMedicationId, setSelectedMedicationId] = useState(null);
+  const [selectedMedication, setSelectedMedication] = useState(null);
+  const [filterStatus, setFilterStatus] = useState("all");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -137,7 +135,7 @@ const Pharmacy = () => {
     }
   );
 
-  const handleStatusChange = (medicationId: string, newStatus: string) => {
+  const handleStatusChange = (medicationId, newStatus) => {
     setMedicationsData(prevData => 
       prevData.map(medication => 
         medication.id === medicationId 
@@ -152,12 +150,12 @@ const Pharmacy = () => {
     });
   };
 
-  const handleUpdateStock = (medication: any) => {
+  const handleUpdateStock = (medication) => {
     setSelectedMedication(medication);
     setIsViewModalOpen(true);
   };
 
-  const handleEditDetails = (medication: any) => {
+  const handleEditDetails = (medication) => {
     setSelectedMedication(medication);
     setIsEditModalOpen(true);
   };
@@ -178,7 +176,7 @@ const Pharmacy = () => {
     });
   };
 
-  const handleAddMedication = (newMedication: any) => {
+  const handleAddMedication = (newMedication) => {
     setMedicationsData(prev => [
       ...prev,
       { ...newMedication, id: `M00${prev.length + 1}` }
@@ -191,7 +189,7 @@ const Pharmacy = () => {
     });
   };
 
-  const handleUpdateMedication = (updatedMedication: any) => {
+  const handleUpdateMedication = (updatedMedication) => {
     setMedicationsData(prevData => 
       prevData.map(medication => 
         medication.id === updatedMedication.id 
@@ -294,7 +292,7 @@ const Pharmacy = () => {
                           <Badge
                             className={cn(
                               "font-normal capitalize",
-                              statusStyles[medication.status as keyof typeof statusStyles]
+                              statusStyles[medication.status]
                             )}
                           >
                             {medication.status.replace('-', ' ')}
@@ -308,41 +306,59 @@ const Pharmacy = () => {
                       </Select>
                     </TableCell>
                     <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-5 w-5" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleUpdateStock(medication)}>
-                            <ShoppingCart className="mr-2 h-4 w-4" />
-                            <span>Update Stock</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditDetails(medication)}>
-                            <FileEdit className="mr-2 h-4 w-4" />
-                            <span>Edit Details</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            className="text-red-600"
-                            onClick={() => {
-                              setSelectedMedicationId(medication.id);
-                              setIsDeleteDialogOpen(true);
-                            }}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            <span>Delete Medication</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <div className="flex justify-end">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleUpdateStock(medication)}
+                          title="Update Stock"
+                        >
+                          <ShoppingCart className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleEditDetails(medication)}
+                          title="Edit Details"
+                        >
+                          <FileEdit className="h-4 w-4" />
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEditDetails(medication)}>
+                              Edit Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleUpdateStock(medication)}>
+                              Update Stock
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={() => {
+                                setSelectedMedicationId(medication.id);
+                                setIsDeleteDialogOpen(true);
+                              }}
+                              className="text-red-600"
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                    No medications found
+                  <TableCell colSpan={8} className="text-center py-6 text-gray-500">
+                    No medications found matching your criteria.
                   </TableCell>
                 </TableRow>
               )}
@@ -351,49 +367,13 @@ const Pharmacy = () => {
         </div>
       </div>
 
-      {/* View/Update Stock Modal */}
-      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
-        <DialogContent className="sm:max-w-lg">
-          {selectedMedication && (
-            <MedicationDetails 
-              medication={selectedMedication} 
-              onUpdate={handleUpdateMedication}
-              onClose={() => setIsViewModalOpen(false)} 
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Medication Modal */}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="sm:max-w-lg">
-          {selectedMedication && (
-            <EditMedicationForm 
-              medication={selectedMedication} 
-              onUpdate={handleUpdateMedication}
-              onCancel={() => setIsEditModalOpen(false)} 
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Add Medication Modal */}
-      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <AddMedicationForm 
-            onAdd={handleAddMedication}
-            onCancel={() => setIsAddModalOpen(false)} 
-          />
-        </DialogContent>
-      </Dialog>
-
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogTitle>Delete Medication</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this medication from inventory? This action cannot be undone.
+              Are you sure you want to delete this medication? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -410,6 +390,16 @@ const Pharmacy = () => {
               Delete
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Medication Modal */}
+      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <AddMedicationForm 
+            onAdd={handleAddMedication}
+            onCancel={() => setIsAddModalOpen(false)}
+          />
         </DialogContent>
       </Dialog>
     </div>

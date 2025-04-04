@@ -24,6 +24,7 @@ import {
   CheckCheck
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 // Mock notifications data
 const notifications = [
@@ -102,20 +103,20 @@ const typeColors = {
 };
 
 const Notifications = () => {
-  const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState(null);
   const [notificationItems, setNotificationItems] = useState(notifications);
 
   const markAllAsRead = () => {
     setNotificationItems(notificationItems.map(n => ({...n, read: true})));
   };
 
-  const markAsRead = (id: string) => {
+  const markAsRead = (id) => {
     setNotificationItems(notificationItems.map(n => 
       n.id === id ? {...n, read: true} : n
     ));
   };
 
-  const deleteNotification = (id: string) => {
+  const deleteNotification = (id) => {
     setNotificationItems(notificationItems.filter(n => n.id !== id));
   };
 
@@ -206,8 +207,8 @@ const Notifications = () => {
                 notification.read ? 'border-gray-200' : 'border-hospital-primary'
               }`}
             >
-              <div className={`rounded-full p-2 ${typeColors[notification.type as keyof typeof typeColors]}`}>
-                {typeIcons[notification.type as keyof typeof typeIcons]}
+              <div className={`rounded-full p-2 ${typeColors[notification.type]}`}>
+                {typeIcons[notification.type]}
               </div>
               
               <div className="flex-1">

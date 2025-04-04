@@ -46,7 +46,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import GenerateReportForm from "@/components/reports/GenerateReportForm";
-import ReportViewer from "@/components/reports/ReportViewer";
 
 // Mock reports data
 const reports = [
@@ -115,10 +114,10 @@ const statusStyles = {
 const Reports = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [reportsData, setReportsData] = useState(reports);
-  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState("all");
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [isViewReportOpen, setIsViewReportOpen] = useState(false);
-  const [selectedReport, setSelectedReport] = useState<any>(null);
+  const [selectedReport, setSelectedReport] = useState(null);
 
   const filteredReports = reportsData.filter(
     (report) => {
@@ -132,7 +131,7 @@ const Reports = () => {
     }
   );
 
-  const handleStatusChange = (reportId: string, newStatus: string) => {
+  const handleStatusChange = (reportId, newStatus) => {
     setReportsData(prevData => 
       prevData.map(report => 
         report.id === reportId 
@@ -147,7 +146,7 @@ const Reports = () => {
     });
   };
 
-  const handleAddReport = (newReport: any) => {
+  const handleAddReport = (newReport) => {
     setReportsData(prev => [
       ...prev,
       { 
@@ -165,7 +164,7 @@ const Reports = () => {
     });
   };
 
-  const downloadReport = (report: any) => {
+  const downloadReport = (report) => {
     // In a real app, this would download the report
     toast({
       title: "Download Started",
@@ -294,10 +293,10 @@ const Reports = () => {
                       <Badge
                         className={cn(
                           "font-normal capitalize flex items-center gap-1 w-fit",
-                          reportTypeClasses[report.type as keyof typeof reportTypeClasses]
+                          reportTypeClasses[report.type]
                         )}
                       >
-                        {reportIcons[report.type as keyof typeof reportIcons]}
+                        {reportIcons[report.type]}
                         <span className="hidden sm:inline">{report.type}</span>
                       </Badge>
                     </TableCell>
@@ -310,7 +309,7 @@ const Reports = () => {
                           <Badge
                             className={cn(
                               "font-normal capitalize",
-                              statusStyles[report.status as keyof typeof statusStyles]
+                              statusStyles[report.status]
                             )}
                           >
                             {report.status}
@@ -383,10 +382,13 @@ const Reports = () => {
             <DialogTitle>Report Preview</DialogTitle>
           </DialogHeader>
           {selectedReport && (
-            <ReportViewer 
-              report={selectedReport} 
-              onClose={() => setIsViewReportOpen(false)}
-            />
+            <div className="p-4">
+              <h3 className="text-xl font-bold mb-4">{selectedReport.name}</h3>
+              <div className="bg-gray-100 rounded-lg p-8 text-center">
+                <p>Report preview content would be displayed here.</p>
+                <p className="text-gray-500 mt-2">ID: {selectedReport.id}</p>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>
