@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -32,7 +33,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CalendarDays, Search, Plus, FileEdit, Trash2, Filter, ChevronDown, Check, User, Stethoscope } from "lucide-react";
+import {
+  CalendarDays,
+  Search,
+  Plus,
+  FileEdit,
+  Trash2,
+  Filter,
+  ChevronDown,
+  Check,
+  User,
+  Stethoscope,
+  MoreHorizontal
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -47,6 +60,7 @@ interface Appointment {
   date: string;
   time: string;
   department: string;
+  type: string;
   status: "scheduled" | "in-progress" | "completed" | "cancelled";
 }
 
@@ -58,6 +72,7 @@ const initialAppointments: Appointment[] = [
     date: "2023-12-20",
     time: "09:00 AM",
     department: "Cardiology",
+    type: "consultation",
     status: "scheduled",
   },
   {
@@ -67,6 +82,7 @@ const initialAppointments: Appointment[] = [
     date: "2023-12-20",
     time: "10:30 AM",
     department: "Neurology",
+    type: "follow-up",
     status: "in-progress",
   },
   {
@@ -76,6 +92,7 @@ const initialAppointments: Appointment[] = [
     date: "2023-12-21",
     time: "11:00 AM",
     department: "Pediatrics",
+    type: "check-up",
     status: "completed",
   },
   {
@@ -85,6 +102,7 @@ const initialAppointments: Appointment[] = [
     date: "2023-12-21",
     time: "02:00 PM",
     department: "Orthopedics",
+    type: "emergency",
     status: "cancelled",
   },
 ];
