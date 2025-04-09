@@ -79,7 +79,7 @@ const SignUp = () => {
       <div className="hidden lg:flex lg:w-1/2 bg-hospital-primary items-center justify-center">
         <div className="max-w-md text-center">
           <h1 className="text-4xl font-bold text-white mb-6">
-            Welcome to MediCore
+            Welcome to HealthGrid
           </h1>
           <p className="text-gray-200 mb-8">
             Join our platform to manage patient care, appointments and medical records more efficiently.
@@ -133,7 +133,7 @@ const SignUp = () => {
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="doctor@medicore.com"
+                  placeholder="doctor@healthgrid.com"
                   required
                   value={formData.email}
                   onChange={handleChange}

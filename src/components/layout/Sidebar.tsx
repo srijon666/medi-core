@@ -101,7 +101,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
           <div className="bg-hospital-primary text-white p-1 rounded">
             <HeartPulse className="h-6 w-6" />
           </div>
-          <div className="text-xl font-display font-semibold text-gray-900">MediCore</div>
+          <div className="text-xl font-display font-semibold text-gray-900">HealthGrid</div>
         </Link>
       </div>
 

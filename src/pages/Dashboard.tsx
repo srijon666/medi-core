@@ -90,7 +90,7 @@ const Dashboard = () => {
     <div className="animate-fade-in">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-800">Welcome back, Dr. John Doe</h1>
-        <p className="text-gray-600">Here's what's happening at MediCore today.</p>
+        <p className="text-gray-600">Here's what's happening at HealthGrid today.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">

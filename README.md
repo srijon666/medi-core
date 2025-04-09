@@ -1,5 +1,5 @@
 
-# MediCare - Hospital Management System
+# HealthGrid - Hospital Management System
 
 A comprehensive and modern Hospital Management System built with React, TypeScript, and Tailwind CSS.
 
