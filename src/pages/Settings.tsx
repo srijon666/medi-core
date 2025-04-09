@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   User,
@@ -59,7 +58,7 @@ const Settings = () => {
   const [accountSettings, setAccountSettings] = useState({
     firstName: "John",
     lastName: "Doe",
-    email: "john.doe@medicore.com",
+    email: "john.doe@healthgrid.com",
     phone: "+91 98765 43210",
     role: "Cardiologist",
     department: "Cardiology",

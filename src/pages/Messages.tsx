@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -41,7 +40,6 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 
-// Contact interface
 interface Contact {
   id: string;
   name: string;
@@ -53,7 +51,6 @@ interface Contact {
   unreadCount?: number;
 }
 
-// Message interface
 interface Message {
   id: string;
   senderId: string;
@@ -80,10 +77,8 @@ const Messages = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showContactInfo, setShowContactInfo] = useState(false);
   
-  // Mock user ID - in a real app, this would come from auth context
   const currentUserId = "user1";
   
-  // Mock contacts
   const [contacts, setContacts] = useState<Contact[]>([
     {
       id: "contact1",
@@ -133,7 +128,6 @@ const Messages = () => {
     },
   ]);
 
-  // Mock messages
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "msg1",
@@ -201,29 +195,23 @@ const Messages = () => {
     },
   ]);
 
-  // Current selected contact
   const [selectedContactId, setSelectedContactId] = useState<string | null>("contact1");
 
-  // Filter contacts based on search
   const filteredContacts = contacts.filter(contact =>
     contact.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Get current messages
   const currentMessages = messages.filter(
     msg =>
       (msg.senderId === selectedContactId && msg.receiverId === currentUserId) ||
       (msg.senderId === currentUserId && msg.receiverId === selectedContactId)
   );
 
-  // Get selected contact
   const selectedContact = contacts.find(c => c.id === selectedContactId);
 
-  // Handle selecting a contact
   const handleSelectContact = (contactId: string) => {
     setSelectedContactId(contactId);
     
-    // Mark messages as read
     setMessages(prevMessages =>
       prevMessages.map(msg =>
         msg.senderId === contactId && msg.receiverId === currentUserId && msg.status !== "read"
@@ -232,7 +220,6 @@ const Messages = () => {
       )
     );
 
-    // Clear unread count
     setContacts(prevContacts =>
       prevContacts.map(contact =>
         contact.id === contactId ? { ...contact, unreadCount: 0 } : contact
@@ -240,7 +227,6 @@ const Messages = () => {
     );
   };
 
-  // Handle send message
   const handleSendMessage = () => {
     if (!currentMessage.trim() || !selectedContactId) return;
 
@@ -256,7 +242,6 @@ const Messages = () => {
     setMessages([...messages, newMessage]);
     setCurrentMessage("");
 
-    // Update last message in contacts
     setContacts(prevContacts =>
       prevContacts.map(contact =>
         contact.id === selectedContactId
@@ -269,7 +254,6 @@ const Messages = () => {
       )
     );
 
-    // Simulate message delivery
     setTimeout(() => {
       setMessages(prevMessages =>
         prevMessages.map(msg =>
@@ -279,13 +263,11 @@ const Messages = () => {
     }, 1000);
   };
 
-  // Handle initiating a call
   const handleInitiateCall = (type: "audio" | "video") => {
     setCallType(type);
     setShowCallDialog(true);
   };
 
-  // Handle attachment selection
   const handleAttachment = (type: string) => {
     toast({
       title: "Attachment Feature",
@@ -294,17 +276,14 @@ const Messages = () => {
     setShowAttachmentOptions(false);
   };
 
-  // Scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Format timestamp
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Functions for call handling
   const handleStartCall = () => {
     toast({
       title: `${callType === "audio" ? "Audio" : "Video"} Call Initiated`,
@@ -316,7 +295,6 @@ const Messages = () => {
   return (
     <div className="h-[calc(100vh-10rem)] flex flex-col">
       <div className="flex-1 flex overflow-hidden">
-        {/* Contacts Sidebar */}
         <div className="w-full md:w-72 lg:w-80 border-r flex flex-col">
           <div className="p-4 border-b bg-white">
             <div className="relative">
@@ -371,10 +349,8 @@ const Messages = () => {
           </div>
         </div>
 
-        {/* Chat Area */}
         {selectedContactId ? (
           <div className="flex-1 flex flex-col">
-            {/* Chat Header */}
             <div className="p-4 border-b flex justify-between items-center bg-white">
               <div className="flex items-center gap-3">
                 <Avatar className="cursor-pointer" onClick={() => setShowContactInfo(!showContactInfo)}>
@@ -439,7 +415,6 @@ const Messages = () => {
               </div>
             </div>
 
-            {/* Messages Area */}
             <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
               <div className="space-y-4">
                 {currentMessages.map((message) => {
@@ -513,7 +488,6 @@ const Messages = () => {
               </div>
             </div>
 
-            {/* Input Area */}
             <div className="p-3 border-t bg-white">
               <div className="flex items-center gap-2">
                 <DropdownMenu open={showAttachmentOptions} onOpenChange={setShowAttachmentOptions}>
@@ -575,7 +549,6 @@ const Messages = () => {
           </div>
         )}
 
-        {/* Contact Info Sidebar */}
         {showContactInfo && selectedContact && (
           <div className="hidden md:block w-80 border-l">
             <div className="p-4 border-b">
@@ -611,7 +584,7 @@ const Messages = () => {
                     </div>
                     <div className="flex items-center">
                       <Mail className="h-4 w-4 mr-2 text-gray-400" />
-                      <span className="text-sm">{selectedContact.name.toLowerCase().replace(" ", ".")}@medicore.com</span>
+                      <span className="text-sm">{selectedContact.name.toLowerCase().replace(" ", ".")}@healthgrid.com</span>
                     </div>
                   </div>
                 </div>
@@ -633,7 +606,6 @@ const Messages = () => {
         )}
       </div>
 
-      {/* Call Dialog */}
       <Dialog open={showCallDialog} onOpenChange={setShowCallDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

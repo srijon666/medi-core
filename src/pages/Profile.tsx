@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -59,7 +58,7 @@ const Profile = () => {
   const [doctorProfile, setDoctorProfile] = useState({
     firstName: "John",
     lastName: "Doe",
-    email: "john.doe@medicore.com",
+    email: "john.doe@healthgrid.com",
     phone: "+91 98765 43210",
     role: "Cardiologist",
     department: "Cardiology",

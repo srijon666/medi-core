@@ -26,7 +26,7 @@ const Login = () => {
       // For demo purposes, we'll just navigate to the dashboard
       toast({
         title: "Login successful",
-        description: "Welcome back to MediCore HMS",
+        description: "Welcome back to HealthGrid HMS",
       });
       
       navigate("/");
@@ -42,7 +42,7 @@ const Login = () => {
             <div className="bg-hospital-primary text-white p-2 rounded-lg mb-4">
               <HeartPulse className="h-8 w-8" />
             </div>
-            <h1 className="text-3xl font-display font-semibold text-gray-900">MediCore</h1>
+            <h1 className="text-3xl font-display font-semibold text-gray-900">HealthGrid</h1>
             <p className="text-gray-600 mt-2">Hospital Management System</p>
           </div>
 
@@ -136,7 +136,7 @@ const Login = () => {
       <div className="hidden lg:block lg:flex-1 bg-gradient-to-br from-hospital-primary to-hospital-accent text-white">
         <div className="h-full flex flex-col items-center justify-center p-10">
           <div className="max-w-md text-center">
-            <h2 className="text-3xl font-display font-semibold mb-4">Welcome to MediCore HMS</h2>
+            <h2 className="text-3xl font-display font-semibold mb-4">Welcome to HealthGrid HMS</h2>
             <p className="text-lg opacity-90 mb-6">
               Your comprehensive hospital management solution for efficient healthcare administration and patient care.
             </p>

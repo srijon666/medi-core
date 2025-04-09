@@ -1,23 +1,23 @@
-
 import React, { useState } from "react";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import { useNavigate } from "react-router-dom";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { 
+import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -32,199 +32,136 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CalendarDays, Search, Plus, FileEdit, Trash2, Filter, ChevronDown, Check, User, Stethoscope } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "@/hooks/use-toast";
-import { 
-  Search, 
-  MoreHorizontal,
-  Plus, 
-  FileEdit, 
-  Trash2,
-  Calendar,
-  Filter,
-  ChevronDown,
-  CalendarCheck,
-  X,
-  Eye
-} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import AddAppointmentForm from "@/components/appointments/AddAppointmentForm";
 import AppointmentDetails from "@/components/appointments/AppointmentDetails";
-import RescheduleAppointment from "@/components/appointments/RescheduleAppointment";
-import NewAppointment from "@/components/appointments/NewAppointment";
+import EditAppointmentForm from "@/components/appointments/EditAppointmentForm";
 
-// Mock appointment data
-const appointments = [
+interface Appointment {
+  id: string;
+  patientName: string;
+  doctorName: string;
+  date: string;
+  time: string;
+  department: string;
+  status: "scheduled" | "in-progress" | "completed" | "cancelled";
+}
+
+const initialAppointments: Appointment[] = [
   {
-    id: "A001",
-    patientName: "Sarah Johnson",
-    doctorName: "Dr. James Wilson",
-    date: "2023-12-22",
+    id: "APT001",
+    patientName: "John Smith",
+    doctorName: "Dr. Alice Johnson",
+    date: "2023-12-20",
     time: "09:00 AM",
-    type: "Consultation",
+    department: "Cardiology",
     status: "scheduled",
   },
   {
-    id: "A002",
-    patientName: "Mike Peterson",
-    doctorName: "Dr. Sarah Parker",
-    date: "2023-12-22",
+    id: "APT002",
+    patientName: "Emily White",
+    doctorName: "Dr. Bob Williams",
+    date: "2023-12-20",
     time: "10:30 AM",
-    type: "Follow-up",
+    department: "Neurology",
+    status: "in-progress",
+  },
+  {
+    id: "APT003",
+    patientName: "David Brown",
+    doctorName: "Dr. Carol Davis",
+    date: "2023-12-21",
+    time: "11:00 AM",
+    department: "Pediatrics",
     status: "completed",
   },
   {
-    id: "A003",
-    patientName: "Emily Williams",
-    doctorName: "Dr. Michael Chen",
-    date: "2023-12-22",
-    time: "11:45 AM",
-    type: "Emergency",
-    status: "scheduled",
-  },
-  {
-    id: "A004",
-    patientName: "Robert Thompson",
-    doctorName: "Dr. Elizabeth Taylor",
-    date: "2023-12-23",
-    time: "09:15 AM",
-    type: "Consultation",
-    status: "cancelled",
-  },
-  {
-    id: "A005",
-    patientName: "Linda Garcia",
-    doctorName: "Dr. Robert Johnson",
-    date: "2023-12-23",
+    id: "APT004",
+    patientName: "Linda Green",
+    doctorName: "Dr. David Miller",
+    date: "2023-12-21",
     time: "02:00 PM",
-    type: "Follow-up",
-    status: "scheduled",
+    department: "Orthopedics",
+    status: "cancelled",
   },
 ];
 
 const statusStyles = {
   scheduled: "bg-blue-100 text-blue-800 hover:bg-blue-100",
-  completed: "bg-green-100 text-green-800 hover:bg-green-100",
+  "in-progress": "bg-green-100 text-green-800 hover:bg-green-100",
+  completed: "bg-gray-100 text-gray-800 hover:bg-gray-100",
   cancelled: "bg-red-100 text-red-800 hover:bg-red-100",
 };
 
 const Appointments = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [appointments, setAppointments] = useState(initialAppointments);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isMarkCompleteDialogOpen, setIsMarkCompleteDialogOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
-  const [appointmentsData, setAppointmentsData] = useState(appointments);
-  const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false);
-  const [isNewAppointmentModalOpen, setIsNewAppointmentModalOpen] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
 
-  // Filter appointments based on search term and status filter
-  const filteredAppointments = appointmentsData.filter(
-    (appointment) => {
-      const matchesSearch = appointment.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        appointment.doctorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        appointment.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        appointment.id.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesStatus = filterStatus === "all" || appointment.status === filterStatus;
-      
-      return matchesSearch && matchesStatus;
-    }
-  );
+  const filteredAppointments = appointments.filter((appointment) => {
+    const matchesSearch =
+      appointment.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      appointment.doctorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      appointment.department.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === "all" ? true : appointment.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
-  const handleStatusChange = (appointmentId: string, newStatus: string) => {
-    setAppointmentsData(prevData => 
-      prevData.map(appointment => 
-        appointment.id === appointmentId 
-          ? { ...appointment, status: newStatus } 
-          : appointment
+  const handleStatusChange = (appointmentId: string, newStatus: Appointment["status"]) => {
+    setAppointments(
+      appointments.map((appointment) =>
+        appointment.id === appointmentId ? { ...appointment, status: newStatus } : appointment
       )
     );
-    
     toast({
       title: "Status Updated",
-      description: "Appointment status has been updated successfully.",
+      description: `Appointment status has been changed to ${newStatus}`,
     });
   };
 
-  const handleMarkComplete = () => {
-    if (!selectedAppointmentId) return;
-    
-    setAppointmentsData(prevData => 
-      prevData.map(appointment => 
-        appointment.id === selectedAppointmentId 
-          ? { ...appointment, status: "completed" } 
-          : appointment
-      )
-    );
-    
-    setIsMarkCompleteDialogOpen(false);
-    setSelectedAppointmentId(null);
-    
+  const handleAddAppointment = (newAppointment: Appointment) => {
+    setAppointments([...appointments, newAppointment]);
+    setIsAddDialogOpen(false);
     toast({
-      title: "Appointment Completed",
-      description: "The appointment has been marked as completed.",
+      title: "Appointment Added",
+      description: "New appointment has been successfully added",
     });
   };
 
-  const handleCancelAppointment = () => {
-    if (!selectedAppointmentId) return;
-    
-    setAppointmentsData(prevData => 
-      prevData.map(appointment => 
-        appointment.id === selectedAppointmentId 
-          ? { ...appointment, status: "cancelled" } 
-          : appointment
+  const handleUpdateAppointment = (updatedAppointment: Appointment) => {
+    setAppointments(
+      appointments.map((appointment) =>
+        appointment.id === updatedAppointment.id ? updatedAppointment : appointment
       )
     );
-    
-    setIsDeleteDialogOpen(false);
-    setSelectedAppointmentId(null);
-    
-    toast({
-      title: "Appointment Cancelled",
-      description: "The appointment has been cancelled successfully.",
-    });
-  };
-
-  const handleViewDetails = (appointment: any) => {
-    setSelectedAppointment(appointment);
-    setIsDetailsModalOpen(true);
-  };
-
-  const handleReschedule = (appointment: any) => {
-    setSelectedAppointment(appointment);
-    setIsRescheduleModalOpen(true);
-  };
-
-  const handleUpdateAppointment = (updatedAppointment: any) => {
-    setAppointmentsData(prevData => 
-      prevData.map(appointment => 
-        appointment.id === updatedAppointment.id 
-          ? updatedAppointment 
-          : appointment
-      )
-    );
-    setIsRescheduleModalOpen(false);
-    
+    setIsEditDialogOpen(false);
     toast({
       title: "Appointment Updated",
-      description: "The appointment has been rescheduled successfully.",
+      description: "Appointment has been successfully updated",
     });
   };
 
-  const handleAddAppointment = (newAppointment: any) => {
-    setAppointmentsData(prev => [
-      ...prev,
-      { ...newAppointment, id: `A00${prev.length + 1}`, status: "scheduled" }
-    ]);
-    setIsNewAppointmentModalOpen(false);
-    
-    toast({
-      title: "Appointment Created",
-      description: "New appointment has been created successfully.",
-    });
+  const handleDeleteAppointment = () => {
+    if (selectedAppointmentId) {
+      setAppointments(appointments.filter((appointment) => appointment.id !== selectedAppointmentId));
+      setIsDeleteDialogOpen(false);
+      setSelectedAppointmentId(null);
+      toast({
+        title: "Appointment Deleted",
+        description: "Appointment has been successfully deleted",
+      });
+    }
   };
 
   return (
@@ -232,7 +169,7 @@ const Appointments = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-gray-800">Appointments</h1>
-          <p className="text-gray-600">Manage patient appointments and scheduling</p>
+          <p className="text-gray-600">Manage your hospital appointments</p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
@@ -245,38 +182,64 @@ const Appointments = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="flex items-center gap-2">
                 <Filter className="h-4 w-4" />
-                <span className="hidden sm:inline">Filter</span>
+                <span className="hidden sm:inline">Status</span>
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => setFilterStatus("all")}>
-                All Appointments
+              <DropdownMenuItem onClick={() => setStatusFilter("all")}>
+                {statusFilter === "all" && <Check className="mr-2 h-4 w-4" />}
+                <span>All Statuses</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFilterStatus("scheduled")}>
-                Scheduled
+              <DropdownMenuItem onClick={() => setStatusFilter("scheduled")}>
+                {statusFilter === "scheduled" && <Check className="mr-2 h-4 w-4" />}
+                <span>Scheduled</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFilterStatus("completed")}>
-                Completed
+              <DropdownMenuItem onClick={() => setStatusFilter("in-progress")}>
+                {statusFilter === "in-progress" && <Check className="mr-2 h-4 w-4" />}
+                <span>In Progress</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFilterStatus("cancelled")}>
-                Cancelled
+              <DropdownMenuItem onClick={() => setStatusFilter("completed")}>
+                {statusFilter === "completed" && <Check className="mr-2 h-4 w-4" />}
+                <span>Completed</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter("cancelled")}>
+                {statusFilter === "cancelled" && <Check className="mr-2 h-4 w-4" />}
+                <span>Cancelled</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          
-          <Button 
+
+          <Button
             className="bg-hospital-primary hover:bg-hospital-accent"
-            onClick={() => setIsNewAppointmentModalOpen(true)}
+            onClick={() => setIsAddDialogOpen(true)}
           >
             <Plus className="h-4 w-4 mr-2" />
-            New Appointment
+            Add Appointment
           </Button>
+        </div>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6">
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-medium mb-2">Total Appointments</h3>
+          <div className="text-3xl font-bold">{appointments.length}</div>
+          <div className="text-sm text-gray-500 mt-1">This month</div>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-medium mb-2">Available Slots</h3>
+          <div className="text-3xl font-bold">27</div>
+          <div className="text-sm text-gray-500 mt-1">For new patients</div>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-medium mb-2">Upcoming Appointments</h3>
+          <div className="text-3xl font-bold">8</div>
+          <div className="text-sm text-gray-500 mt-1">Next 24 hours</div>
         </div>
       </div>
 
@@ -285,12 +248,12 @@ const Appointments = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-20">ID</TableHead>
+                <TableHead className="w-24">ID</TableHead>
                 <TableHead>Patient</TableHead>
-                <TableHead className="hidden md:table-cell">Doctor</TableHead>
+                <TableHead>Doctor</TableHead>
+                <TableHead className="hidden md:table-cell">Department</TableHead>
                 <TableHead>Date</TableHead>
-                <TableHead className="hidden md:table-cell">Time</TableHead>
-                <TableHead className="hidden md:table-cell">Type</TableHead>
+                <TableHead>Time</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -301,27 +264,26 @@ const Appointments = () => {
                   <TableRow key={appointment.id}>
                     <TableCell className="font-medium">{appointment.id}</TableCell>
                     <TableCell>{appointment.patientName}</TableCell>
-                    <TableCell className="hidden md:table-cell">{appointment.doctorName}</TableCell>
+                    <TableCell>{appointment.doctorName}</TableCell>
+                    <TableCell className="hidden md:table-cell">{appointment.department}</TableCell>
                     <TableCell>{appointment.date}</TableCell>
-                    <TableCell className="hidden md:table-cell">{appointment.time}</TableCell>
-                    <TableCell className="hidden md:table-cell">{appointment.type}</TableCell>
+                    <TableCell>{appointment.time}</TableCell>
                     <TableCell>
                       <Select
                         defaultValue={appointment.status}
-                        onValueChange={(value) => handleStatusChange(appointment.id, value)}
+                        onValueChange={(value) => handleStatusChange(appointment.id, value as Appointment["status"])}
                       >
-                        <SelectTrigger className="w-32">
-                          <Badge
-                            className={cn(
-                              "font-normal capitalize",
-                              statusStyles[appointment.status as keyof typeof statusStyles]
-                            )}
-                          >
-                            {appointment.status}
-                          </Badge>
+                        <SelectTrigger
+                          className={cn(
+                            "h-7 w-28 font-normal capitalize",
+                            statusStyles[appointment.status as keyof typeof statusStyles]
+                          )}
+                        >
+                          <SelectValue placeholder="Select status" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="scheduled">Scheduled</SelectItem>
+                          <SelectItem value="in-progress">In Progress</SelectItem>
                           <SelectItem value="completed">Completed</SelectItem>
                           <SelectItem value="cancelled">Cancelled</SelectItem>
                         </SelectContent>
@@ -335,35 +297,34 @@ const Appointments = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleViewDetails(appointment)}>
-                            <Eye className="mr-2 h-4 w-4" />
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedAppointment(appointment);
+                              setIsViewDialogOpen(true);
+                            }}
+                          >
+                            <CalendarDays className="mr-2 h-4 w-4" />
                             <span>View Details</span>
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleReschedule(appointment)}>
-                            <FileEdit className="mr-2 h-4 w-4" />
-                            <span>Reschedule</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             onClick={() => {
-                              setSelectedAppointmentId(appointment.id);
-                              setIsMarkCompleteDialogOpen(true);
+                              setSelectedAppointment(appointment);
+                              setIsEditDialogOpen(true);
                             }}
-                            disabled={appointment.status === "completed" || appointment.status === "cancelled"}
                           >
-                            <CalendarCheck className="mr-2 h-4 w-4" />
-                            <span>Mark as Complete</span>
+                            <FileEdit className="mr-2 h-4 w-4" />
+                            <span>Edit Appointment</span>
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             className="text-red-600"
                             onClick={() => {
                               setSelectedAppointmentId(appointment.id);
                               setIsDeleteDialogOpen(true);
                             }}
-                            disabled={appointment.status === "cancelled"}
                           >
-                            <X className="mr-2 h-4 w-4" />
-                            <span>Cancel Appointment</span>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            <span>Delete Appointment</span>
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -382,87 +343,64 @@ const Appointments = () => {
         </div>
       </div>
 
-      {/* View Details Modal */}
-      <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
-        <DialogContent className="sm:max-w-lg">
-          {selectedAppointment && (
-            <AppointmentDetails 
-              appointment={selectedAppointment} 
-              onClose={() => setIsDetailsModalOpen(false)} 
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Reschedule Modal */}
-      <Dialog open={isRescheduleModalOpen} onOpenChange={setIsRescheduleModalOpen}>
-        <DialogContent className="sm:max-w-lg">
-          {selectedAppointment && (
-            <RescheduleAppointment 
-              appointment={selectedAppointment} 
-              onReschedule={handleUpdateAppointment}
-              onCancel={() => setIsRescheduleModalOpen(false)} 
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* New Appointment Modal */}
-      <Dialog open={isNewAppointmentModalOpen} onOpenChange={setIsNewAppointmentModalOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <NewAppointment 
-            onAdd={handleAddAppointment}
-            onCancel={() => setIsNewAppointmentModalOpen(false)} 
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Mark Complete Confirmation Dialog */}
-      <Dialog open={isMarkCompleteDialogOpen} onOpenChange={setIsMarkCompleteDialogOpen}>
-        <DialogContent>
+      {/* Add Appointment Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Confirm Completion</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to mark this appointment as completed?
-            </DialogDescription>
+            <DialogTitle>Add New Appointment</DialogTitle>
+            <DialogDescription>Create a new appointment for a patient.</DialogDescription>
           </DialogHeader>
+          <AddAppointmentForm onSubmit={handleAddAppointment} onCancel={() => setIsAddDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
+      {/* View Appointment Details Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Appointment Details</DialogTitle>
+          </DialogHeader>
+          {selectedAppointment && <AppointmentDetails appointment={selectedAppointment} />}
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsMarkCompleteDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleMarkComplete}
-            >
-              Mark as Completed
+            <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Cancel Confirmation Dialog */}
+      {/* Edit Appointment Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Edit Appointment</DialogTitle>
+            <DialogDescription>Edit the details of the selected appointment.</DialogDescription>
+          </DialogHeader>
+          {selectedAppointment && (
+            <EditAppointmentForm
+              appointment={selectedAppointment}
+              onSubmit={handleUpdateAppointment}
+              onCancel={() => setIsEditDialogOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirm Cancellation</DialogTitle>
+            <DialogTitle>Confirm Deletion</DialogTitle>
             <DialogDescription>
-              Are you sure you want to cancel this appointment? This action cannot be undone.
+              Are you sure you want to delete this appointment? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsDeleteDialogOpen(false)}
-            >
-              Keep Appointment
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleCancelAppointment}
-            >
-              Cancel Appointment
+            <Button variant="destructive" onClick={handleDeleteAppointment}>
+              Delete
             </Button>
           </DialogFooter>
         </DialogContent>

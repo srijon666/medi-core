@@ -1,23 +1,41 @@
-
 import React, { useState } from "react";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
+import { useNavigate } from "react-router-dom";
+import {
+  Search,
+  Plus,
+  Edit,
+  Trash2,
+  FileText,
+  Calendar,
+  User,
+  Package,
+  TrendingUp,
+  ChevronDown
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { 
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
   DropdownMenu,
-  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -33,381 +51,456 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "@/hooks/use-toast";
-import { 
-  Search, 
-  MoreHorizontal,
-  Plus, 
-  FileEdit, 
-  Trash2,
-  Filter,
-  ChevronDown,
-  ShoppingCart
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import MedicationDetails from "@/components/pharmacy/MedicationDetails";
-import EditMedicationForm from "@/components/pharmacy/EditMedicationForm";
-import AddMedicationForm from "@/components/pharmacy/AddMedicationForm";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 
-// Mock pharmacy inventory data
-const medications = [
+interface Medication {
+  id: string;
+  name: string;
+  dosage: string;
+  stock: number;
+  expiryDate: string;
+  manufacturer: string;
+  price: number;
+}
+
+const initialMedications: Medication[] = [
   {
     id: "M001",
     name: "Amoxicillin",
-    category: "Antibiotics",
-    stock: 250,
-    price: "$8.99",
-    supplier: "PharmaCorp",
-    status: "in-stock",
+    dosage: "250mg",
+    stock: 120,
+    expiryDate: "2024-12-31",
+    manufacturer: "PharmaCorp",
+    price: 5.99,
   },
   {
     id: "M002",
-    name: "Lisinopril",
-    category: "Blood Pressure",
-    stock: 120,
-    price: "$12.50",
-    supplier: "MediSupply",
-    status: "in-stock",
+    name: "Ibuprofen",
+    dosage: "200mg",
+    stock: 200,
+    expiryDate: "2025-01-15",
+    manufacturer: "MediPlus",
+    price: 3.50,
   },
   {
     id: "M003",
-    name: "Atorvastatin",
-    category: "Cholesterol",
-    stock: 75,
-    price: "$15.25",
-    supplier: "HealthPharm",
-    status: "low-stock",
+    name: "Paracetamol",
+    dosage: "500mg",
+    stock: 150,
+    expiryDate: "2024-11-30",
+    manufacturer: "HealthFirst",
+    price: 4.25,
   },
   {
     id: "M004",
-    name: "Albuterol Inhaler",
-    category: "Respiratory",
-    stock: 30,
-    price: "$25.99",
-    supplier: "MediSupply",
-    status: "low-stock",
+    name: "Loratadine",
+    dosage: "10mg",
+    stock: 100,
+    expiryDate: "2025-02-28",
+    manufacturer: "AllergyFree",
+    price: 7.50,
   },
   {
     id: "M005",
-    name: "Metformin",
-    category: "Diabetes",
-    stock: 200,
-    price: "$7.49",
-    supplier: "PharmaCorp",
-    status: "in-stock",
-  },
-  {
-    id: "M006",
-    name: "Lorazepam",
-    category: "Anxiety",
-    stock: 0,
-    price: "$18.75",
-    supplier: "HealthPharm",
-    status: "out-of-stock",
+    name: "Omeprazole",
+    dosage: "20mg",
+    stock: 80,
+    expiryDate: "2024-10-31",
+    manufacturer: "GastroEase",
+    price: 9.99,
   },
 ];
 
-const statusStyles = {
-  "in-stock": "bg-green-100 text-green-800 hover:bg-green-100",
-  "low-stock": "bg-yellow-100 text-yellow-800 hover:bg-yellow-100",
-  "out-of-stock": "bg-red-100 text-red-800 hover:bg-red-100",
-};
-
 const Pharmacy = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [medications, setMedications] = useState<Medication[]>(initialMedications);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedMedicationId, setSelectedMedicationId] = useState<string | null>(null);
-  const [selectedMedication, setSelectedMedication] = useState<any>(null);
-  const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [medicationsData, setMedicationsData] = useState(medications);
+  const [selectedMedication, setSelectedMedication] = useState<Medication | null>(null);
+  const [newMedication, setNewMedication] = useState<Omit<Medication, "id">>({
+    name: "",
+    dosage: "",
+    stock: 0,
+    expiryDate: new Date().toISOString().split('T')[0],
+    manufacturer: "",
+    price: 0,
+  });
 
-  // Filter medications based on search term and status filter
-  const filteredMedications = medicationsData.filter(
-    (medication) => {
-      const matchesSearch = medication.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        medication.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        medication.id.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesStatus = filterStatus === "all" || medication.status === filterStatus;
-      
-      return matchesSearch && matchesStatus;
-    }
+  const filteredMedications = medications.filter(medication =>
+    medication.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    medication.manufacturer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    medication.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleStatusChange = (medicationId: string, newStatus: string) => {
-    setMedicationsData(prevData => 
-      prevData.map(medication => 
-        medication.id === medicationId 
-          ? { ...medication, status: newStatus } 
-          : medication
-      )
-    );
-    
+  const handleAddMedication = () => {
+    const newId = `M${String(medications.length + 1).padStart(3, '0')}`;
+    const medicationToAdd = { ...newMedication, id: newId };
+    setMedications([...medications, medicationToAdd]);
+    setNewMedication({
+      name: "",
+      dosage: "",
+      stock: 0,
+      expiryDate: new Date().toISOString().split('T')[0],
+      manufacturer: "",
+      price: 0,
+    });
+    setIsAddDialogOpen(false);
     toast({
-      title: "Status Updated",
-      description: "Medication status has been updated successfully.",
+      title: "Medication Added",
+      description: `${medicationToAdd.name} has been added to the inventory`,
     });
   };
 
-  const handleUpdateStock = (medication: any) => {
-    setSelectedMedication(medication);
-    setIsViewModalOpen(true);
-  };
-
-  const handleEditDetails = (medication: any) => {
-    setSelectedMedication(medication);
-    setIsEditModalOpen(true);
+  const handleUpdateMedication = () => {
+    if (selectedMedication) {
+      setMedications(medications.map(m =>
+        m.id === selectedMedication.id ? selectedMedication : m
+      ));
+      toast({
+        title: "Medication Updated",
+        description: `${selectedMedication.name}'s information has been updated`,
+      });
+      setIsEditDialogOpen(false);
+    }
   };
 
   const handleDeleteMedication = () => {
-    if (!selectedMedicationId) return;
-    
-    setMedicationsData(prevData => 
-      prevData.filter(medication => medication.id !== selectedMedicationId)
-    );
-    
-    setIsDeleteDialogOpen(false);
-    setSelectedMedicationId(null);
-    
-    toast({
-      title: "Medication Deleted",
-      description: "The medication has been deleted successfully.",
-    });
+    if (selectedMedication) {
+      setMedications(medications.filter(m => m.id !== selectedMedication.id));
+      toast({
+        title: "Medication Deleted",
+        description: `${selectedMedication.name} has been removed from the inventory`,
+      });
+      setIsDeleteDialogOpen(false);
+    }
   };
 
-  const handleAddMedication = (newMedication: any) => {
-    setMedicationsData(prev => [
-      ...prev,
-      { ...newMedication, id: `M00${prev.length + 1}` }
-    ]);
-    setIsAddModalOpen(false);
-    
-    toast({
-      title: "Medication Added",
-      description: "New medication has been added successfully.",
-    });
+  const handleStockAlert = () => {
+    const lowStockMedications = medications.filter(medication => medication.stock < 50);
+    if (lowStockMedications.length > 0) {
+      const medicationNames = lowStockMedications.map(medication => medication.name).join(", ");
+      toast({
+        title: "Low Stock Alert",
+        description: `The following medications are running low: ${medicationNames}`,
+      });
+    } else {
+      toast({
+        title: "Stock Levels",
+        description: "All medications are adequately stocked",
+      });
+    }
   };
 
-  const handleUpdateMedication = (updatedMedication: any) => {
-    setMedicationsData(prevData => 
-      prevData.map(medication => 
-        medication.id === updatedMedication.id 
-          ? updatedMedication 
-          : medication
-      )
-    );
-    setIsEditModalOpen(false);
-    
-    toast({
-      title: "Medication Updated",
-      description: "Medication details have been updated successfully.",
+  const handleExpiryAlert = () => {
+    const expiringSoonMedications = medications.filter(medication => {
+      const expiryDate = new Date(medication.expiryDate);
+      const currentDate = new Date();
+      const timeDiff = expiryDate.getTime() - currentDate.getTime();
+      const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+      return daysDiff <= 90;
     });
+
+    if (expiringSoonMedications.length > 0) {
+      const medicationNames = expiringSoonMedications.map(medication => medication.name).join(", ");
+      toast({
+        title: "Expiry Alert",
+        description: `The following medications are expiring within 90 days: ${medicationNames}`,
+      });
+    } else {
+      toast({
+        title: "Expiry Dates",
+        description: "No medications are expiring within the next 90 days",
+      });
+    }
   };
 
   return (
-    <div className="animate-fade-in">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-800">Pharmacy</h1>
-          <p className="text-gray-600">Manage medication inventory</p>
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center">
+          <Package className="h-6 w-6 mr-2 text-hospital-primary" />
+          <h1 className="text-2xl font-bold">Pharmacy</h1>
         </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search medications..."
-              className="pl-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2">
-                <Filter className="h-4 w-4" />
-                <span className="hidden sm:inline">Filter</span>
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => setFilterStatus("all")}>
-                All Medications
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFilterStatus("in-stock")}>
-                In Stock
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFilterStatus("low-stock")}>
-                Low Stock
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFilterStatus("out-of-stock")}>
-                Out of Stock
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          <Button 
-            className="bg-hospital-primary hover:bg-hospital-accent"
-            onClick={() => setIsAddModalOpen(true)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Medication
-          </Button>
-        </div>
+        <Button onClick={() => setIsAddDialogOpen(true)} className="bg-hospital-primary">
+          <Plus className="h-4 w-4 mr-2" /> Add Medication
+        </Button>
       </div>
 
-      <div className="bg-white rounded-lg shadow">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-20">ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead className="hidden md:table-cell">Category</TableHead>
-                <TableHead>Stock</TableHead>
-                <TableHead className="hidden md:table-cell">Price</TableHead>
-                <TableHead className="hidden md:table-cell">Supplier</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredMedications.length > 0 ? (
-                filteredMedications.map((medication) => (
-                  <TableRow key={medication.id}>
-                    <TableCell className="font-medium">{medication.id}</TableCell>
-                    <TableCell>{medication.name}</TableCell>
-                    <TableCell className="hidden md:table-cell">{medication.category}</TableCell>
-                    <TableCell>{medication.stock}</TableCell>
-                    <TableCell className="hidden md:table-cell">{medication.price}</TableCell>
-                    <TableCell className="hidden md:table-cell">{medication.supplier}</TableCell>
-                    <TableCell>
-                      <Select
-                        defaultValue={medication.status}
-                        onValueChange={(value) => handleStatusChange(medication.id, value)}
-                      >
-                        <SelectTrigger className="w-32">
-                          <Badge
-                            className={cn(
-                              "font-normal capitalize",
-                              statusStyles[medication.status as keyof typeof statusStyles]
-                            )}
-                          >
-                            {medication.status.replace('-', ' ')}
-                          </Badge>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="in-stock">In Stock</SelectItem>
-                          <SelectItem value="low-stock">Low Stock</SelectItem>
-                          <SelectItem value="out-of-stock">Out of Stock</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-5 w-5" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleUpdateStock(medication)}>
-                            <ShoppingCart className="mr-2 h-4 w-4" />
-                            <span>Update Stock</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditDetails(medication)}>
-                            <FileEdit className="mr-2 h-4 w-4" />
-                            <span>Edit Details</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            className="text-red-600"
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <div className="flex flex-col md:flex-row justify-between gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search medications..."
+                className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Button onClick={handleStockAlert} variant="outline">
+                <TrendingUp className="h-4 w-4 mr-2" /> Check Stock
+              </Button>
+              <Button onClick={handleExpiryAlert} variant="outline">
+                <Calendar className="h-4 w-4 mr-2" /> Check Expiry
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle>Medication List</CardTitle>
+          <CardDescription>
+            Showing {filteredMedications.length} out of {medications.length} medications
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ID</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Dosage</TableHead>
+                  <TableHead>Stock</TableHead>
+                  <TableHead>Expiry Date</TableHead>
+                  <TableHead>Manufacturer</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredMedications.length > 0 ? (
+                  filteredMedications.map((medication) => (
+                    <TableRow key={medication.id}>
+                      <TableCell className="font-medium">{medication.id}</TableCell>
+                      <TableCell>{medication.name}</TableCell>
+                      <TableCell>{medication.dosage}</TableCell>
+                      <TableCell>{medication.stock}</TableCell>
+                      <TableCell>{new Date(medication.expiryDate).toLocaleDateString()}</TableCell>
+                      <TableCell>{medication.manufacturer}</TableCell>
+                      <TableCell>${medication.price.toFixed(2)}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => {
-                              setSelectedMedicationId(medication.id);
-                              setIsDeleteDialogOpen(true);
+                              setSelectedMedication(medication);
+                              setIsEditDialogOpen(true);
                             }}
                           >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            <span>Delete Medication</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedMedication(medication);
+                              setIsDeleteDialogOpen(true);
+                            }}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                      No medications found matching your criteria
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                    No medications found
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* View/Update Stock Modal */}
-      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
-        <DialogContent className="sm:max-w-lg">
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New Medication</DialogTitle>
+            <DialogDescription>
+              Enter medication details to add it to the inventory
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  value={newMedication.name}
+                  onChange={(e) => setNewMedication({ ...newMedication, name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="dosage">Dosage</Label>
+                <Input
+                  id="dosage"
+                  value={newMedication.dosage}
+                  onChange={(e) => setNewMedication({ ...newMedication, dosage: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="stock">Stock</Label>
+                <Input
+                  id="stock"
+                  type="number"
+                  value={newMedication.stock}
+                  onChange={(e) => setNewMedication({ ...newMedication, stock: parseInt(e.target.value) })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="expiryDate">Expiry Date</Label>
+                <Input
+                  id="expiryDate"
+                  type="date"
+                  value={newMedication.expiryDate}
+                  onChange={(e) => setNewMedication({ ...newMedication, expiryDate: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="manufacturer">Manufacturer</Label>
+                <Input
+                  id="manufacturer"
+                  value={newMedication.manufacturer}
+                  onChange={(e) => setNewMedication({ ...newMedication, manufacturer: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="price">Price</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  value={newMedication.price}
+                  onChange={(e) => setNewMedication({ ...newMedication, price: parseFloat(e.target.value) })}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
+            <Button type="submit" onClick={handleAddMedication}>Add Medication</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Medication Details</DialogTitle>
+            <DialogDescription>
+              Update information for this medication
+            </DialogDescription>
+          </DialogHeader>
           {selectedMedication && (
-            <MedicationDetails 
-              medication={selectedMedication} 
-              onUpdate={handleUpdateMedication}
-              onClose={() => setIsViewModalOpen(false)} 
-            />
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-name">Name</Label>
+                  <Input
+                    id="edit-name"
+                    value={selectedMedication.name}
+                    onChange={(e) => setSelectedMedication({ ...selectedMedication, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-dosage">Dosage</Label>
+                  <Input
+                    id="edit-dosage"
+                    value={selectedMedication.dosage}
+                    onChange={(e) => setSelectedMedication({ ...selectedMedication, dosage: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-stock">Stock</Label>
+                  <Input
+                    id="edit-stock"
+                    type="number"
+                    value={selectedMedication.stock}
+                    onChange={(e) => setSelectedMedication({ ...selectedMedication, stock: parseInt(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-expiryDate">Expiry Date</Label>
+                  <Input
+                    id="edit-expiryDate"
+                    type="date"
+                    value={selectedMedication.expiryDate}
+                    onChange={(e) => setSelectedMedication({ ...selectedMedication, expiryDate: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-manufacturer">Manufacturer</Label>
+                  <Input
+                    id="edit-manufacturer"
+                    value={selectedMedication.manufacturer}
+                    onChange={(e) => setSelectedMedication({ ...selectedMedication, manufacturer: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-price">Price</Label>
+                  <Input
+                    id="edit-price"
+                    type="number"
+                    value={selectedMedication.price}
+                    onChange={(e) => setSelectedMedication({ ...selectedMedication, price: parseFloat(e.target.value) })}
+                  />
+                </div>
+              </div>
+            </div>
           )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleUpdateMedication}>Save Changes</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Edit Medication Modal */}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="sm:max-w-lg">
-          {selectedMedication && (
-            <EditMedicationForm 
-              medication={selectedMedication} 
-              onUpdate={handleUpdateMedication}
-              onCancel={() => setIsEditModalOpen(false)} 
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Add Medication Modal */}
-      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <AddMedicationForm 
-            onAdd={handleAddMedication}
-            onCancel={() => setIsAddModalOpen(false)} 
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this medication from inventory? This action cannot be undone.
+              Are you sure you want to delete this medication from the inventory? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
+          {selectedMedication && (
+            <div className="py-4">
+              <p className="font-medium">You are about to delete:</p>
+              <p className="text-gray-700">{selectedMedication.name} (ID: {selectedMedication.id})</p>
+            </div>
+          )}
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsDeleteDialogOpen(false)}
-            >
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
             <Button
               variant="destructive"
-              onClick={handleDeleteMedication}
+              onClick={() => {
+                handleDeleteMedication();
+                setIsDeleteDialogOpen(false);
+              }}
             >
-              Delete
+              Delete Medication
             </Button>
           </DialogFooter>
         </DialogContent>

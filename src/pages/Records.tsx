@@ -1,23 +1,47 @@
-
-import React, { useState, useRef } from "react";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  FileText,
+  Search,
+  Plus,
+  Filter,
+  Download,
+  Eye,
+  Edit,
+  Trash2,
+  ChevronDown,
+  Calendar,
+  Clock,
+  User,
+  FileUp,
+  MoreHorizontal,
+  Check
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { 
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
   DropdownMenu,
-  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -26,861 +50,598 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetFooter,
-  SheetClose,
-} from "@/components/ui/sheet";
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Search, 
-  MoreHorizontal,
-  Plus, 
-  FileEdit, 
-  Trash2,
-  FileText,
-  Filter,
-  ChevronDown,
-  Download,
-  Share2,
-  Printer,
-  Check
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 
-// Mock medical records data
-const initialMedicalRecords = [
+interface Record {
+  id: string;
+  patientId: string;
+  patientName: string;
+  recordType: string;
+  date: string;
+  doctor: string;
+  department: string;
+  status: "complete" | "pending" | "review";
+  files: {
+    name: string;
+    type: string;
+    size: string;
+    uploadDate: string;
+  }[];
+}
+
+const initialRecords: Record[] = [
   {
-    id: "R001",
-    patientName: "Sarah Johnson",
+    id: "REC001",
+    patientId: "P001",
+    patientName: "John Smith",
     recordType: "Lab Report",
     date: "2023-12-15",
-    doctor: "Dr. James Wilson",
+    doctor: "Dr. Sarah Johnson",
     department: "Cardiology",
-    status: "reviewed",
-    notes: "Patient's cholesterol levels are within normal range. Blood pressure is slightly elevated."
+    status: "complete",
+    files: [
+      {
+        name: "blood_work_results.pdf",
+        type: "PDF",
+        size: "2.4 MB",
+        uploadDate: "2023-12-15",
+      },
+      {
+        name: "ecg_report.pdf",
+        type: "PDF",
+        size: "1.8 MB",
+        uploadDate: "2023-12-15",
+      },
+    ],
   },
   {
-    id: "R002",
-    patientName: "Mike Peterson",
-    recordType: "X-Ray",
-    date: "2023-12-02",
-    doctor: "Dr. Sarah Parker",
+    id: "REC002",
+    patientId: "P002",
+    patientName: "Mary Johnson",
+    recordType: "Prescription",
+    date: "2023-12-17",
+    doctor: "Dr. Michael Chen",
+    department: "Neurology",
+    status: "complete",
+    files: [
+      {
+        name: "prescription_dec17.pdf",
+        type: "PDF",
+        size: "0.5 MB",
+        uploadDate: "2023-12-17",
+      },
+    ],
+  },
+  {
+    id: "REC003",
+    patientId: "P003",
+    patientName: "Rahul Sharma",
+    recordType: "Surgery Report",
+    date: "2023-12-10",
+    doctor: "Dr. Elizabeth Taylor",
+    department: "Orthopedics",
+    status: "review",
+    files: [
+      {
+        name: "surgery_report.pdf",
+        type: "PDF",
+        size: "4.2 MB",
+        uploadDate: "2023-12-10",
+      },
+      {
+        name: "post_op_instructions.pdf",
+        type: "PDF",
+        size: "1.1 MB",
+        uploadDate: "2023-12-10",
+      },
+      {
+        name: "xray_images.zip",
+        type: "ZIP",
+        size: "15.8 MB",
+        uploadDate: "2023-12-10",
+      },
+    ],
+  },
+  {
+    id: "REC004",
+    patientId: "P004",
+    patientName: "Priya Patel",
+    recordType: "Radiology",
+    date: "2023-12-18",
+    doctor: "Dr. Robert Johnson",
     department: "Radiology",
     status: "pending",
-    notes: "Chest X-Ray shows no abnormalities in lung tissue. Heart size appears normal."
+    files: [
+      {
+        name: "chest_xray.dcm",
+        type: "DICOM",
+        size: "24.5 MB",
+        uploadDate: "2023-12-18",
+      },
+    ],
   },
   {
-    id: "R003",
-    patientName: "Emily Williams",
-    recordType: "Prescription",
-    date: "2023-12-18",
-    doctor: "Dr. Michael Chen",
-    department: "Pediatrics",
-    status: "reviewed",
-    notes: "Prescribed amoxicillin 250mg three times daily for 7 days for ear infection."
+    id: "REC005",
+    patientId: "P005",
+    patientName: "Michael Wong",
+    recordType: "Consultation",
+    date: "2023-12-16",
+    doctor: "Dr. James Wilson",
+    department: "Cardiology",
+    status: "complete",
+    files: [
+      {
+        name: "consultation_notes.pdf",
+        type: "PDF",
+        size: "0.8 MB",
+        uploadDate: "2023-12-16",
+      },
+      {
+        name: "medication_list.pdf",
+        type: "PDF",
+        size: "0.3 MB",
+        uploadDate: "2023-12-16",
+      },
+    ],
   },
-  {
-    id: "R004",
-    patientName: "Robert Thompson",
-    recordType: "MRI Scan",
-    date: "2023-11-28",
-    doctor: "Dr. Elizabeth Taylor",
-    department: "Neurology",
-    status: "reviewed",
-    notes: "MRI of the brain shows no evidence of tumor or stroke. Mild age-related changes noted."
-  },
-  {
-    id: "R005",
-    patientName: "Linda Garcia",
-    recordType: "Blood Test",
-    date: "2023-12-10",
-    doctor: "Dr. Robert Johnson",
-    department: "Hematology",
-    status: "pending",
-    notes: "CBC indicates mild anemia. Recommend iron supplements and follow-up in 30 days."
-  },
-];
-
-const statusStyles = {
-  reviewed: "bg-green-100 text-green-800 hover:bg-green-100",
-  pending: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100",
-};
-
-const departments = [
-  "Emergency Department (ED)", "Cardiology", "Neurology", "Pediatrics", 
-  "Obstetrics and Gynecology", "Orthopedics", "Radiology", "Pathology", 
-  "General Surgery", "Urology", "Dermatology", "Gastroenterology", 
-  "Nephrology", "Pulmonology", "Psychiatry", "Endocrinology", 
-  "Rheumatology", "Anesthesiology", "Intensive Care Unit (ICU)", 
-  "Infectious Diseases", "Ophthalmology", "ENT (Otorhinolaryngology)", 
-  "Hematology", "Physical Medicine and Rehabilitation"
-];
-
-const recordTypes = [
-  "All Records", "Lab Report", "X-Ray", "Prescription", "MRI Scan", "Blood Test", "Ultrasound", "ECG", "CT Scan"
 ];
 
 const Records = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
+  const [records, setRecords] = useState<Record[]>(initialRecords);
   const [searchTerm, setSearchTerm] = useState("");
-  const [medicalRecords, setMedicalRecords] = useState(initialMedicalRecords);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
-  const [selectedRecord, setSelectedRecord] = useState<any>(null);
-  const [typeFilter, setTypeFilter] = useState("All Records");
-  
-  // Sheet states
-  const [viewDetailsOpen, setViewDetailsOpen] = useState(false);
-  const [editRecordOpen, setEditRecordOpen] = useState(false);
-  const [addRecordOpen, setAddRecordOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
 
-  // Form states for add/edit record
-  const [formData, setFormData] = useState({
-    id: "",
-    patientName: "",
-    recordType: "",
-    date: "",
-    doctor: "",
-    department: "",
-    status: "",
-    notes: ""
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<Record | null>(null);
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+
+  const filteredRecords = records.filter(record => {
+    const matchesSearch = 
+      record.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.patientId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.doctor.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === "all" ? true : record.status === statusFilter;
+    const matchesType = typeFilter === "all" ? true : record.recordType === typeFilter;
+    
+    return matchesSearch && matchesStatus && matchesType;
   });
 
-  // Ref for printing
-  const printRef = useRef<HTMLDivElement>(null);
+  const handleViewRecord = (record: Record) => {
+    setSelectedRecord(record);
+    setIsViewDialogOpen(true);
+  };
 
-  const filteredRecords = medicalRecords.filter(
-    (record) => {
-      const matchesSearch = 
-        record.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        record.recordType.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        record.doctor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        record.id.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesType = typeFilter === "All Records" || record.recordType === typeFilter;
-      
-      return matchesSearch && matchesType;
-    }
-  );
+  const handleDeleteRecord = (record: Record) => {
+    setSelectedRecord(record);
+    setIsDeleteDialogOpen(true);
+  };
 
-  const handlePrint = () => {
-    const printContent = printRef.current;
-    if (!printContent) return;
-    
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
+  const confirmDeleteRecord = () => {
+    if (selectedRecord) {
+      setRecords(records.filter(r => r.id !== selectedRecord.id));
       toast({
-        title: "Error",
-        description: "Please allow pop-ups to enable printing",
-        variant: "destructive"
+        title: "Record Deleted",
+        description: `Record ${selectedRecord.id} has been deleted`,
       });
-      return;
-    }
-    
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Medical Record - ${selectedRecord?.id}</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            h2 { color: #333; }
-            .record-detail { margin-bottom: 20px; }
-            .label { font-weight: bold; }
-            .notes { white-space: pre-wrap; margin-top: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
-          </style>
-        </head>
-        <body>
-          <h2>Medical Record - ${selectedRecord?.id}</h2>
-          <div class="record-detail"><span class="label">Patient:</span> ${selectedRecord?.patientName}</div>
-          <div class="record-detail"><span class="label">Type:</span> ${selectedRecord?.recordType}</div>
-          <div class="record-detail"><span class="label">Date:</span> ${selectedRecord?.date}</div>
-          <div class="record-detail"><span class="label">Doctor:</span> ${selectedRecord?.doctor}</div>
-          <div class="record-detail"><span class="label">Department:</span> ${selectedRecord?.department}</div>
-          <div class="record-detail"><span class="label">Status:</span> ${selectedRecord?.status}</div>
-          <div class="record-detail"><span class="label">Notes:</span></div>
-          <div class="notes">${selectedRecord?.notes}</div>
-        </body>
-      </html>
-    `);
-    
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
-    
-    toast({
-      title: "Success",
-      description: "Record printed successfully",
-    });
-  };
-
-  const handleDownload = () => {
-    handlePrint(); // For simplicity, download uses the same print functionality
-    toast({
-      title: "Success",
-      description: "Record downloaded as PDF",
-    });
-  };
-
-  const handleShare = () => {
-    toast({
-      title: "Share initiated",
-      description: "Record will be shared as PDF after download",
-    });
-    handleDownload();
-  };
-
-  const handleViewDetails = (record: any) => {
-    setSelectedRecord(record);
-    setViewDetailsOpen(true);
-  };
-
-  const handleEditRecord = (record: any) => {
-    setSelectedRecord(record);
-    setFormData(record);
-    setEditRecordOpen(true);
-  };
-
-  const handleAddRecord = () => {
-    const newId = `R${String(medicalRecords.length + 1).padStart(3, '0')}`;
-    
-    setFormData({
-      id: newId,
-      patientName: "",
-      recordType: "",
-      date: new Date().toISOString().split('T')[0],
-      doctor: "",
-      department: "",
-      status: "pending",
-      notes: ""
-    });
-    
-    setAddRecordOpen(true);
-  };
-
-  const handleSubmitAdd = () => {
-    const newRecord = { ...formData };
-    
-    setMedicalRecords([...medicalRecords, newRecord]);
-    setAddRecordOpen(false);
-    
-    toast({
-      title: "Record added",
-      description: `New record for ${newRecord.patientName} added successfully`,
-    });
-  };
-
-  const handleSubmitEdit = () => {
-    const updatedRecords = medicalRecords.map(record => 
-      record.id === formData.id ? formData : record
-    );
-    
-    setMedicalRecords(updatedRecords);
-    setEditRecordOpen(false);
-    
-    toast({
-      title: "Record updated",
-      description: `Record for ${formData.patientName} updated successfully`,
-    });
-  };
-
-  const handleDeleteConfirm = () => {
-    if (selectedRecordId) {
-      const updatedRecords = medicalRecords.filter(record => record.id !== selectedRecordId);
-      setMedicalRecords(updatedRecords);
       setIsDeleteDialogOpen(false);
-      
-      toast({
-        title: "Record deleted",
-        description: "Medical record has been deleted successfully",
-      });
     }
   };
 
-  const handleUpdateStatus = (recordId: string, newStatus: string) => {
-    const updatedRecords = medicalRecords.map(record => 
-      record.id === recordId ? { ...record, status: newStatus } : record
-    );
-    
-    setMedicalRecords(updatedRecords);
+  const handleUploadFiles = (patientId: string) => {
+    setSelectedPatientId(patientId);
+    setIsUploadDialogOpen(true);
+  };
+
+  const handleStatusChange = (recordId: string, newStatus: "complete" | "pending" | "review") => {
+    setRecords(records.map(record => 
+      record.id === recordId ? {...record, status: newStatus} : record
+    ));
     
     toast({
-      title: "Status updated",
-      description: `Record status changed to ${newStatus}`,
+      title: "Status Updated",
+      description: `Record status has been changed to ${newStatus}`,
     });
   };
 
-  const handleUpdateDepartment = (recordId: string, newDepartment: string) => {
-    const updatedRecords = medicalRecords.map(record => 
-      record.id === recordId ? { ...record, department: newDepartment } : record
-    );
-    
-    setMedicalRecords(updatedRecords);
-    
-    toast({
-      title: "Department updated",
-      description: `Record department changed to ${newDepartment}`,
-    });
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "complete": return "bg-green-500";
+      case "pending": return "bg-yellow-500";
+      case "review": return "bg-blue-500";
+      default: return "bg-gray-400";
+    }
   };
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const getFileIcon = (fileType: string) => {
+    switch (fileType.toLowerCase()) {
+      case "pdf": return "📄";
+      case "dicom": return "🔬";
+      case "zip": return "🗜️";
+      case "jpg":
+      case "jpeg":
+      case "png": return "🖼️";
+      default: return "📁";
+    }
   };
+
+  const recordTypes = ["Lab Report", "Prescription", "Surgery Report", "Radiology", "Consultation"];
 
   return (
-    <div className="animate-fade-in">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-800">Medical Records</h1>
-          <p className="text-gray-600">Manage and view patient medical records</p>
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center">
+          <FileText className="h-6 w-6 mr-2 text-hospital-primary" />
+          <h1 className="text-2xl font-bold">Medical Records</h1>
         </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search records..."
-              className="pl-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2">
-                <Filter className="h-4 w-4" />
-                <span className="hidden sm:inline">{typeFilter}</span>
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              {recordTypes.map((type) => (
-                <DropdownMenuItem key={type} onClick={() => setTypeFilter(type)}>
-                  {type}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          <Button 
-            className="bg-hospital-primary hover:bg-hospital-accent"
-            onClick={handleAddRecord}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Record
-          </Button>
-        </div>
+        <Button onClick={() => setIsUploadDialogOpen(true)} className="bg-hospital-primary">
+          <Plus className="h-4 w-4 mr-2" /> Upload Record
+        </Button>
       </div>
 
-      <div className="bg-white rounded-lg shadow">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-20">ID</TableHead>
-                <TableHead>Patient</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead className="hidden md:table-cell">Date</TableHead>
-                <TableHead className="hidden md:table-cell">Doctor</TableHead>
-                <TableHead className="hidden md:table-cell">Department</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredRecords.length > 0 ? (
-                filteredRecords.map((record) => (
-                  <TableRow key={record.id}>
-                    <TableCell className="font-medium">{record.id}</TableCell>
-                    <TableCell>{record.patientName}</TableCell>
-                    <TableCell>{record.recordType}</TableCell>
-                    <TableCell className="hidden md:table-cell">{record.date}</TableCell>
-                    <TableCell className="hidden md:table-cell">{record.doctor}</TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      <Select
-                        defaultValue={record.department}
-                        onValueChange={(value) => handleUpdateDepartment(record.id, value)}
-                      >
-                        <SelectTrigger className="h-8 w-[180px]">
-                          <SelectValue placeholder="Select department" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {departments.map((dept) => (
-                            <SelectItem key={dept} value={dept}>
-                              {dept}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      <Select
-                        defaultValue={record.status}
-                        onValueChange={(value) => handleUpdateStatus(record.id, value)}
-                      >
-                        <SelectTrigger className="h-8">
-                          <SelectValue>
-                            <Badge
-                              className={cn(
-                                "font-normal capitalize",
-                                statusStyles[record.status as keyof typeof statusStyles]
-                              )}
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <div className="flex flex-col md:flex-row justify-between gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search records by patient name, ID..."
+                className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col sm:flex-row items-center gap-2">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-gray-500" />
+                <span className="text-sm">Status:</span>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="All Statuses" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem> 
+                    <SelectItem value="complete">Complete</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="review">Under Review</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm">Type:</span>
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue placeholder="All Types" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    {recordTypes.map(type => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle>Medical Records</CardTitle>
+          <CardDescription>
+            Showing {filteredRecords.length} out of {records.length} records
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Record ID</TableHead>
+                  <TableHead>Patient</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Doctor</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Files</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredRecords.length > 0 ? (
+                  filteredRecords.map((record) => (
+                    <TableRow key={record.id}>
+                      <TableCell className="font-medium">{record.id}</TableCell>
+                      <TableCell>
+                        <div className="font-medium">{record.patientName}</div>
+                        <div className="text-sm text-gray-500">{record.patientId}</div>
+                      </TableCell>
+                      <TableCell>{record.recordType}</TableCell>
+                      <TableCell>{new Date(record.date).toLocaleDateString()}</TableCell>
+                      <TableCell>{record.doctor}</TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className={`rounded-full px-2 py-0.5 text-white ${getStatusColor(record.status)}`}
                             >
-                              {record.status}
-                            </Badge>
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="reviewed">
-                            <Badge className={statusStyles.reviewed}>
-                              Reviewed
-                            </Badge>
-                          </SelectItem>
-                          <SelectItem value="pending">
-                            <Badge className={statusStyles.pending}>
-                              Pending
-                            </Badge>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-5 w-5" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleViewDetails(record)}>
-                            <FileText className="mr-2 h-4 w-4" />
-                            <span>View Details</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => {
-                            setSelectedRecord(record);
-                            handleDownload();
-                          }}>
-                            <Download className="mr-2 h-4 w-4" />
-                            <span>Download</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => {
-                            setSelectedRecord(record);
-                            handleShare();
-                          }}>
-                            <Share2 className="mr-2 h-4 w-4" />
-                            <span>Share</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditRecord(record)}>
-                            <FileEdit className="mr-2 h-4 w-4" />
-                            <span>Edit Record</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            className="text-red-600"
-                            onClick={() => {
-                              setSelectedRecordId(record.id);
-                              setIsDeleteDialogOpen(true);
-                            }}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            <span>Delete Record</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                              {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
+                              <ChevronDown className="ml-1 h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start">
+                            <DropdownMenuItem onClick={() => handleStatusChange(record.id, "complete")}>
+                              <Badge className="bg-green-500 mr-2">Complete</Badge>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleStatusChange(record.id, "pending")}>
+                              <Badge className="bg-yellow-500 mr-2">Pending</Badge>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleStatusChange(record.id, "review")}>
+                              <Badge className="bg-blue-500 mr-2">Under Review</Badge>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                      <TableCell>{record.files.length} files</TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-5 w-5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleViewRecord(record)}>
+                              <Eye className="mr-2 h-4 w-4" />
+                              <span>View Details</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleUploadFiles(record.patientId)}>
+                              <FileUp className="mr-2 h-4 w-4" />
+                              <span>Upload Files</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              className="text-red-600"
+                              onClick={() => handleDeleteRecord(record)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              <span>Delete Record</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                      No records found matching your criteria
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                    No records found
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* View Record Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Record Details</DialogTitle>
+            <DialogDescription>
+              Complete information about the selected medical record
+            </DialogDescription>
+          </DialogHeader>
+          {selectedRecord && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Record ID</h3>
+                  <p>{selectedRecord.id}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Record Type</h3>
+                  <p>{selectedRecord.recordType}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Patient Name</h3>
+                  <p>{selectedRecord.patientName}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Patient ID</h3>
+                  <p>{selectedRecord.patientId}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Date</h3>
+                  <p>{new Date(selectedRecord.date).toLocaleDateString()}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Status</h3>
+                  <Badge className={`${getStatusColor(selectedRecord.status)} text-white`}>
+                    {selectedRecord.status.charAt(0).toUpperCase() + selectedRecord.status.slice(1)}
+                  </Badge>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Doctor</h3>
+                  <p>{selectedRecord.doctor}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Department</h3>
+                  <p>{selectedRecord.department}</p>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-2">Files</h3>
+                <div className="space-y-2">
+                  {selectedRecord.files.map((file, index) => (
+                    <div key={index} className="border rounded p-3 bg-gray-50 flex justify-between items-center">
+                      <div className="flex items-center">
+                        <span className="mr-2 text-xl">{getFileIcon(file.type)}</span>
+                        <div>
+                          <div className="font-medium text-sm">{file.name}</div>
+                          <div className="text-xs text-gray-500">
+                            {file.type} • {file.size} • Uploaded on {new Date(file.uploadDate).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm" className="flex items-center gap-1">
+                        <Download className="h-3 w-3" />
+                        <span>Download</span>
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setIsViewDialogOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
             <DialogDescription>
               Are you sure you want to delete this medical record? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
+          {selectedRecord && (
+            <div className="py-4">
+              <p className="font-medium">You are about to delete:</p>
+              <p className="text-gray-700">Record ID: {selectedRecord.id}</p>
+              <p className="text-gray-700">Patient: {selectedRecord.patientName}</p>
+              <p className="text-gray-700">Type: {selectedRecord.recordType}</p>
+            </div>
+          )}
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsDeleteDialogOpen(false)}
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
+            <Button 
+              variant="destructive" 
+              onClick={confirmDeleteRecord}
             >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDeleteConfirm}
-            >
-              Delete
+              Delete Record
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* View Details Sheet */}
-      <Sheet open={viewDetailsOpen} onOpenChange={setViewDetailsOpen}>
-        <SheetContent className="sm:max-w-md">
-          <SheetHeader>
-            <SheetTitle>Medical Record Details</SheetTitle>
-            <SheetDescription>
-              View complete details for this medical record
-            </SheetDescription>
-          </SheetHeader>
-          
-          <div className="py-6" ref={printRef}>
-            {selectedRecord && (
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Record ID</h3>
-                  <p className="text-base">{selectedRecord.id}</p>
+      {/* Upload Files Dialog */}
+      <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Upload Medical Record</DialogTitle>
+            <DialogDescription>
+              Add new files to a patient's medical record
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="patient">Patient</Label>
+              <Select defaultValue={selectedPatientId || ""}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select patient" />
+                </SelectTrigger>
+                <SelectContent>
+                  {records.map(record => (
+                    <SelectItem key={record.patientId} value={record.patientId}>
+                      {record.patientName} ({record.patientId})
+                    </SelectItem>
+                  )).filter((item, index, self) => 
+                    index === self.findIndex(t => t.key === item.key)
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="recordType">Record Type</Label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select record type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {recordTypes.map(type => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="date">Date</Label>
+              <Input id="date" type="date" defaultValue={new Date().toISOString().split('T')[0]} />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="doctor">Doctor</Label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select doctor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dr-sarah-johnson">Dr. Sarah Johnson</SelectItem>
+                  <SelectItem value="dr-michael-chen">Dr. Michael Chen</SelectItem>
+                  <SelectItem value="dr-elizabeth-taylor">Dr. Elizabeth Taylor</SelectItem>
+                  <SelectItem value="dr-robert-johnson">Dr. Robert Johnson</SelectItem>
+                  <SelectItem value="dr-james-wilson">Dr. James Wilson</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="files">Upload Files</Label>
+              <div className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center">
+                <FileUp className="mx-auto h-8 w-8 text-gray-400" />
+                <div className="mt-2">
+                  <Button variant="outline" size="sm">Select Files</Button>
                 </div>
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Patient Name</h3>
-                  <p className="text-base">{selectedRecord.patientName}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Record Type</h3>
-                  <p className="text-base">{selectedRecord.recordType}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Date</h3>
-                  <p className="text-base">{selectedRecord.date}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Doctor</h3>
-                  <p className="text-base">{selectedRecord.doctor}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Department</h3>
-                  <p className="text-base">{selectedRecord.department}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Status</h3>
-                  <Badge
-                    className={cn(
-                      "font-normal mt-1 capitalize",
-                      statusStyles[selectedRecord.status as keyof typeof statusStyles]
-                    )}
-                  >
-                    {selectedRecord.status}
-                  </Badge>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Medical Notes</h3>
-                  <p className="text-base mt-2 whitespace-pre-wrap border p-3 rounded-md bg-gray-50">
-                    {selectedRecord.notes}
-                  </p>
-                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Support for PDF, DICOM, JPEG, PNG files. Max 50MB per file.
+                </p>
               </div>
-            )}
+            </div>
           </div>
-          
-          <SheetFooter className="flex space-x-2 sm:space-x-0">
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2"
-              onClick={handlePrint}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsUploadDialogOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={() => {
+                toast({
+                  title: "Files Uploaded",
+                  description: "Medical records have been successfully uploaded",
+                });
+                setIsUploadDialogOpen(false);
+              }}
             >
-              <Printer className="h-4 w-4" />
-              Print
+              Upload Files
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2"
-              onClick={handleDownload}
-            >
-              <Download className="h-4 w-4" />
-              Download
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2"
-              onClick={handleShare}
-            >
-              <Share2 className="h-4 w-4" />
-              Share
-            </Button>
-            <SheetClose asChild>
-              <Button
-                variant="default"
-                size="sm"
-                className="flex items-center gap-2"
-                onClick={() => handleEditRecord(selectedRecord)}
-              >
-                <FileEdit className="h-4 w-4" />
-                Edit
-              </Button>
-            </SheetClose>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
-
-      {/* Edit Record Sheet */}
-      <Sheet open={editRecordOpen} onOpenChange={setEditRecordOpen}>
-        <SheetContent className="sm:max-w-md">
-          <SheetHeader>
-            <SheetTitle>Edit Medical Record</SheetTitle>
-            <SheetDescription>
-              Make changes to the medical record
-            </SheetDescription>
-          </SheetHeader>
-          
-          <div className="py-6">
-            <form className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Record ID</label>
-                <Input name="id" value={formData.id} disabled />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Patient Name</label>
-                <Input 
-                  name="patientName" 
-                  value={formData.patientName} 
-                  onChange={handleFormChange}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Record Type</label>
-                <Select 
-                  value={formData.recordType} 
-                  onValueChange={(value) => 
-                    setFormData(prev => ({ ...prev, recordType: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select record type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {recordTypes.slice(1).map(type => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Date</label>
-                <Input 
-                  type="date" 
-                  name="date" 
-                  value={formData.date} 
-                  onChange={handleFormChange} 
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Doctor</label>
-                <Input 
-                  name="doctor" 
-                  value={formData.doctor} 
-                  onChange={handleFormChange} 
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Department</label>
-                <Select 
-                  value={formData.department} 
-                  onValueChange={(value) => 
-                    setFormData(prev => ({ ...prev, department: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {departments.map(dept => (
-                      <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Status</label>
-                <Select 
-                  value={formData.status} 
-                  onValueChange={(value) => 
-                    setFormData(prev => ({ ...prev, status: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="reviewed">Reviewed</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Medical Notes</label>
-                <Textarea 
-                  name="notes" 
-                  value={formData.notes} 
-                  onChange={handleFormChange}
-                  rows={6} 
-                />
-              </div>
-            </form>
-          </div>
-          
-          <SheetFooter>
-            <SheetClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </SheetClose>
-            <Button onClick={handleSubmitEdit} className="flex items-center gap-2">
-              <Check className="h-4 w-4" />
-              Save Changes
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
-
-      {/* Add Record Sheet */}
-      <Sheet open={addRecordOpen} onOpenChange={setAddRecordOpen}>
-        <SheetContent className="sm:max-w-md">
-          <SheetHeader>
-            <SheetTitle>Add New Medical Record</SheetTitle>
-            <SheetDescription>
-              Create a new medical record for a patient
-            </SheetDescription>
-          </SheetHeader>
-          
-          <div className="py-6">
-            <form className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Record ID</label>
-                <Input name="id" value={formData.id} disabled />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Patient Name</label>
-                <Input 
-                  name="patientName" 
-                  value={formData.patientName} 
-                  onChange={handleFormChange}
-                  placeholder="Enter patient name" 
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Record Type</label>
-                <Select 
-                  value={formData.recordType} 
-                  onValueChange={(value) => 
-                    setFormData(prev => ({ ...prev, recordType: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select record type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {recordTypes.slice(1).map(type => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Date</label>
-                <Input 
-                  type="date" 
-                  name="date" 
-                  value={formData.date} 
-                  onChange={handleFormChange} 
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Doctor</label>
-                <Input 
-                  name="doctor" 
-                  value={formData.doctor} 
-                  onChange={handleFormChange}
-                  placeholder="Enter doctor name" 
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Department</label>
-                <Select 
-                  value={formData.department} 
-                  onValueChange={(value) => 
-                    setFormData(prev => ({ ...prev, department: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {departments.map(dept => (
-                      <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Status</label>
-                <Select 
-                  value={formData.status} 
-                  onValueChange={(value) => 
-                    setFormData(prev => ({ ...prev, status: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="reviewed">Reviewed</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Medical Notes</label>
-                <Textarea 
-                  name="notes" 
-                  value={formData.notes} 
-                  onChange={handleFormChange}
-                  placeholder="Enter medical notes and observations" 
-                  rows={6} 
-                />
-              </div>
-            </form>
-          </div>
-          
-          <SheetFooter>
-            <SheetClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </SheetClose>
-            <Button onClick={handleSubmitAdd} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Record
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
