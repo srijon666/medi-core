@@ -62,12 +62,46 @@ A comprehensive and modern Hospital Management System built with React, TypeScri
 
 ## Project Structure
 
-- `/src`: Source code
-  - `/components`: Reusable UI components
-  - `/pages`: Page components
-  - `/hooks`: Custom React hooks
-  - `/lib`: Utility functions
-  - `/context`: React context providers
+healthgrid/
+├── client/ # React frontend
+│ └── src/
+│ ├── components/
+│ ├── pages/
+│ ├── services/
+│ └── App.js
+├── server/ # Express backend
+│ ├── controllers/
+│ ├── models/
+│ ├── routes/
+│ ├── middlewares/
+│ └── server.js
+└── README.md
+
+---
+
+## ✨ Key Features
+
+✅ Secure User Authentication with JWT and 6-digit OTP via email  
+✅ Role-Based Access Control (Admin, Doctor, Nurse, Receptionist, Patient)  
+✅ Patient Registration, Profile Management, Medical Records  
+✅ Appointment Scheduling and Tracking  
+✅ Staff Management and Scheduling  
+✅ Billing and Payment Tracking  
+✅ Secure Password Reset via Email Verification  
+✅ Google reCAPTCHA Integration  
+✅ Responsive UI with Tailwind CSS & Framer Motion  
+✅ Form Validation with ZOD  
+✅ Cloud Database with MongoDB Atlas
+
+---
+
+## 🔑 Setup Instructions
+
+### 1️⃣ Clone the Repository
+
+```bash
+git clone https://github.com/your-username/healthgrid.git
+cd healthgrid
 
 ## License
 
