@@ -13,7 +13,11 @@ import {
   Camera,
   MapPin,
   CheckCheck,
-  Mail
+  Mail,
+  Download,
+  Play,
+  Pause,
+  Square
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -77,6 +81,11 @@ const Messages = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showContactInfo, setShowContactInfo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [recordingInterval, setRecordingInterval] = useState<NodeJS.Timeout | null>(null);
   
   const currentUserId = "user1";
   
@@ -269,7 +278,7 @@ const Messages = () => {
     setShowCallDialog(true);
   };
 
-  const handleAttachment = (type: string) => {
+  const handleAttachment = async (type: string) => {
     if (!selectedContactId) return;
 
     switch (type) {
@@ -281,77 +290,117 @@ const Messages = () => {
         break;
       case "Document":
         if (fileInputRef.current) {
-          fileInputRef.current.accept = ".pdf,.doc,.docx,.txt";
+          fileInputRef.current.accept = ".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx";
           fileInputRef.current.click();
         }
         break;
       case "Camera":
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-          navigator.mediaDevices.getUserMedia({ video: true })
-            .then(() => {
-              toast({
-                title: "Camera Access",
-                description: "Camera functionality is in development.",
-              });
-            })
-            .catch(() => {
-              toast({
-                title: "Camera Error",
-                description: "Unable to access camera.",
-                variant: "destructive",
-              });
-            });
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: "user" }, 
+            audio: false 
+          });
+          
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            videoRef.current.play();
+          }
+          
+          // Create a canvas to capture the photo
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          
+          setTimeout(() => {
+            if (videoRef.current && context) {
+              canvas.width = videoRef.current.videoWidth;
+              canvas.height = videoRef.current.videoHeight;
+              context.drawImage(videoRef.current, 0, 0);
+              
+              canvas.toBlob((blob) => {
+                if (blob) {
+                  const file = new File([blob], `camera-${Date.now()}.jpg`, { type: 'image/jpeg' });
+                  handleFileUpload(file, 'image');
+                }
+              }, 'image/jpeg', 0.8);
+              
+              // Stop the camera stream
+              stream.getTracks().forEach(track => track.stop());
+            }
+          }, 3000); // Capture after 3 seconds
+          
+          toast({
+            title: "Camera Activated",
+            description: "Photo will be captured in 3 seconds...",
+          });
+          
+        } catch (error) {
+          toast({
+            title: "Camera Error",
+            description: "Unable to access camera. Please check permissions.",
+            variant: "destructive",
+          });
         }
         break;
       case "Location":
         if (navigator.geolocation) {
+          toast({
+            title: "Getting Location",
+            description: "Please wait while we get your location...",
+          });
+          
           navigator.geolocation.getCurrentPosition(
             (position) => {
               const locationMessage: Message = {
                 id: `msg${messages.length + 1}`,
                 senderId: currentUserId,
                 receiverId: selectedContactId,
-                text: `Shared location: ${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`,
+                text: `📍 Location shared`,
                 timestamp: new Date(),
                 status: "sent",
                 attachments: [{
                   type: "location",
                   url: `https://maps.google.com/?q=${position.coords.latitude},${position.coords.longitude}`,
-                  name: "Current Location"
+                  name: `Lat: ${position.coords.latitude.toFixed(6)}, Long: ${position.coords.longitude.toFixed(6)}`
                 }]
               };
               setMessages(prev => [...prev, locationMessage]);
               toast({
                 title: "Location Shared",
-                description: "Your current location has been shared.",
+                description: "Your current location has been shared successfully.",
               });
             },
-            () => {
+            (error) => {
               toast({
                 title: "Location Error",
-                description: "Unable to access your location.",
+                description: "Unable to access your location. Please check permissions.",
                 variant: "destructive",
               });
-            }
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
           );
+        } else {
+          toast({
+            title: "Location Not Supported",
+            description: "Geolocation is not supported by this browser.",
+            variant: "destructive",
+          });
         }
         break;
     }
     setShowAttachmentOptions(false);
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleFileUpload = (file: File, type: 'image' | 'file') => {
     if (file && selectedContactId) {
       const fileMessage: Message = {
         id: `msg${messages.length + 1}`,
         senderId: currentUserId,
         receiverId: selectedContactId,
-        text: `Shared ${file.type.includes('image') ? 'photo' : 'document'}: ${file.name}`,
+        text: `${type === 'image' ? '📷' : '📄'} ${file.name}`,
         timestamp: new Date(),
         status: "sent",
         attachments: [{
-          type: file.type.includes('image') ? "image" : "file",
+          type: type,
           url: URL.createObjectURL(file),
           name: file.name,
           size: (file.size / (1024 * 1024)).toFixed(2) + " MB"
@@ -359,28 +408,129 @@ const Messages = () => {
       };
       setMessages(prev => [...prev, fileMessage]);
       toast({
-        title: "File Attached",
-        description: `${file.name} has been shared.`,
+        title: `${type === 'image' ? 'Photo' : 'Document'} Attached`,
+        description: `${file.name} has been shared successfully.`,
+      });
+    }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && selectedContactId) {
+      const isImage = file.type.startsWith('image/');
+      handleFileUpload(file, isImage ? 'image' : 'file');
+    }
+    // Reset the input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDownload = (attachment: any) => {
+    try {
+      const link = document.createElement('a');
+      link.href = attachment.url;
+      link.download = attachment.name || 'download';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({
+        title: "Download Started",
+        description: `${attachment.name} is being downloaded.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Download Failed",
+        description: "Unable to download the file.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const startVoiceRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const audioChunks: BlobPart[] = [];
+
+      recorder.ondataavailable = (event) => {
+        audioChunks.push(event.data);
+      };
+
+      recorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+        const audioFile = new File([audioBlob], `voice-message-${Date.now()}.wav`, { type: 'audio/wav' });
+        
+        if (selectedContactId) {
+          const voiceMessage: Message = {
+            id: `msg${messages.length + 1}`,
+            senderId: currentUserId,
+            receiverId: selectedContactId,
+            text: `🎵 Voice message (${Math.floor(recordingTime / 60)}:${(recordingTime % 60).toString().padStart(2, '0')})`,
+            timestamp: new Date(),
+            status: "sent",
+            attachments: [{
+              type: "audio",
+              url: URL.createObjectURL(audioBlob),
+              name: `Voice message ${Math.floor(recordingTime / 60)}:${(recordingTime % 60).toString().padStart(2, '0')}`,
+              size: (audioBlob.size / (1024 * 1024)).toFixed(2) + " MB"
+            }]
+          };
+          setMessages(prev => [...prev, voiceMessage]);
+        }
+        
+        // Clean up
+        stream.getTracks().forEach(track => track.stop());
+        setRecordingTime(0);
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsRecording(true);
+      
+      // Start recording timer
+      const interval = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+      setRecordingInterval(interval);
+
+      toast({
+        title: "Recording Started",
+        description: "Voice message recording in progress...",
+      });
+    } catch (error) {
+      toast({
+        title: "Microphone Error",
+        description: "Unable to access microphone. Please check permissions.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const stopVoiceRecording = () => {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+      setMediaRecorder(null);
+      
+      if (recordingInterval) {
+        clearInterval(recordingInterval);
+        setRecordingInterval(null);
+      }
+      
+      toast({
+        title: "Recording Completed",
+        description: "Voice message has been sent.",
       });
     }
   };
 
   const handleVoiceMessage = () => {
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(() => {
-          toast({
-            title: "Voice Message",
-            description: "Voice message functionality is in development.",
-          });
-        })
-        .catch(() => {
-          toast({
-            title: "Microphone Error",
-            description: "Unable to access microphone.",
-            variant: "destructive",
-          });
-        });
+    if (isRecording) {
+      stopVoiceRecording();
+    } else {
+      startVoiceRecording();
     }
   };
 
@@ -407,6 +557,13 @@ const Messages = () => {
         type="file"
         className="hidden"
         onChange={handleFileSelect}
+      />
+      
+      <video
+        ref={videoRef}
+        className="hidden"
+        autoPlay
+        muted
       />
       
       <div className="flex-1 flex overflow-hidden">
@@ -530,7 +687,7 @@ const Messages = () => {
               </div>
             </div>
 
-            <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
+            <div className="flex-1 p-4 overflow-y-auto bg-gray-50 dark:bg-gray-900">
               <div className="space-y-4">
                 {currentMessages.map((message) => {
                   const isCurrentUser = message.senderId === currentUserId;
@@ -543,44 +700,121 @@ const Messages = () => {
                         className={`max-w-[80%] rounded-lg p-3 ${
                           isCurrentUser
                             ? "bg-hospital-primary text-white rounded-br-none"
-                            : "bg-white text-gray-800 rounded-bl-none border"
+                            : "bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-bl-none border dark:border-gray-700"
                         }`}
                       >
                         {message.text}
                         
                         {message.attachments && message.attachments.length > 0 && (
-                          <div className="mt-2">
+                          <div className="mt-2 space-y-2">
                             {message.attachments.map((attachment, index) => (
-                              <div
-                                key={index}
-                                className={`flex items-center gap-2 p-2 rounded ${
-                                  isCurrentUser ? "bg-blue-700" : "bg-gray-100"
-                                }`}
-                              >
-                                <File className="h-4 w-4" />
-                                <div className="flex-1 min-w-0">
-                                  <p className={`text-xs ${isCurrentUser ? "text-white" : "text-gray-800"} truncate`}>
-                                    {attachment.name}
-                                  </p>
-                                  {attachment.size && (
-                                    <p className={`text-xs ${isCurrentUser ? "text-blue-200" : "text-gray-500"}`}>
-                                      {attachment.size}
-                                    </p>
-                                  )}
-                                </div>
-                                <button
-                                  className={`text-xs ${isCurrentUser ? "text-white bg-blue-800" : "text-blue-600 bg-white"} px-2 py-1 rounded`}
-                                  onClick={() => toast({ title: "Download", description: "Download started" })}
-                                >
-                                  Download
-                                </button>
+                              <div key={index}>
+                                {attachment.type === "image" ? (
+                                  <div className="space-y-2">
+                                    <img
+                                      src={attachment.url}
+                                      alt={attachment.name}
+                                      className="max-w-full h-auto rounded-lg max-h-64 object-cover"
+                                    />
+                                    <Button
+                                      size="sm"
+                                      variant={isCurrentUser ? "secondary" : "outline"}
+                                      onClick={() => handleDownload(attachment)}
+                                      className="flex items-center gap-1"
+                                    >
+                                      <Download className="h-3 w-3" />
+                                      Download
+                                    </Button>
+                                  </div>
+                                ) : attachment.type === "location" ? (
+                                  <div className={`flex items-center gap-2 p-2 rounded ${
+                                    isCurrentUser ? "bg-blue-700" : "bg-gray-100 dark:bg-gray-700"
+                                  }`}>
+                                    <MapPin className="h-4 w-4" />
+                                    <div className="flex-1">
+                                      <p className={`text-xs ${isCurrentUser ? "text-white" : "text-gray-800 dark:text-gray-100"}`}>
+                                        {attachment.name}
+                                      </p>
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      variant={isCurrentUser ? "secondary" : "outline"}
+                                      onClick={() => window.open(attachment.url, '_blank')}
+                                    >
+                                      View Map
+                                    </Button>
+                                  </div>
+                                ) : attachment.type === "audio" ? (
+                                  <div className={`flex items-center gap-2 p-2 rounded ${
+                                    isCurrentUser ? "bg-blue-700" : "bg-gray-100 dark:bg-gray-700"
+                                  }`}>
+                                    <Button
+                                      size="sm"
+                                      variant={isCurrentUser ? "secondary" : "outline"}
+                                      onClick={() => {
+                                        const audio = new Audio(attachment.url);
+                                        audio.play().catch(() => {
+                                          toast({
+                                            title: "Playback Error",
+                                            description: "Unable to play audio file.",
+                                            variant: "destructive",
+                                          });
+                                        });
+                                      }}
+                                    >
+                                      <Play className="h-3 w-3" />
+                                    </Button>
+                                    <div className="flex-1">
+                                      <p className={`text-xs ${isCurrentUser ? "text-white" : "text-gray-800 dark:text-gray-100"}`}>
+                                        {attachment.name}
+                                      </p>
+                                      {attachment.size && (
+                                        <p className={`text-xs ${isCurrentUser ? "text-blue-200" : "text-gray-500 dark:text-gray-400"}`}>
+                                          {attachment.size}
+                                        </p>
+                                      )}
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      variant={isCurrentUser ? "secondary" : "outline"}
+                                      onClick={() => handleDownload(attachment)}
+                                    >
+                                      <Download className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <div className={`flex items-center gap-2 p-2 rounded ${
+                                    isCurrentUser ? "bg-blue-700" : "bg-gray-100 dark:bg-gray-700"
+                                  }`}>
+                                    <File className="h-4 w-4" />
+                                    <div className="flex-1 min-w-0">
+                                      <p className={`text-xs ${isCurrentUser ? "text-white" : "text-gray-800 dark:text-gray-100"} truncate`}>
+                                        {attachment.name}
+                                      </p>
+                                      {attachment.size && (
+                                        <p className={`text-xs ${isCurrentUser ? "text-blue-200" : "text-gray-500 dark:text-gray-400"}`}>
+                                          {attachment.size}
+                                        </p>
+                                      )}
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      variant={isCurrentUser ? "secondary" : "outline"}
+                                      onClick={() => handleDownload(attachment)}
+                                      className="flex items-center gap-1"
+                                    >
+                                      <Download className="h-3 w-3" />
+                                      Download
+                                    </Button>
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
                         )}
                         
                         <div className={`text-xs mt-1 flex justify-end items-center gap-1 ${
-                          isCurrentUser ? "text-blue-100" : "text-gray-500"
+                          isCurrentUser ? "text-blue-100" : "text-gray-500 dark:text-gray-400"
                         }`}>
                           {formatTime(message.timestamp)}
                           {isCurrentUser && (
@@ -603,15 +837,36 @@ const Messages = () => {
               </div>
             </div>
 
-            <div className="p-3 border-t bg-white">
+            <div className="p-3 border-t bg-white dark:bg-gray-800 dark:border-gray-700">
+              {isRecording && (
+                <div className="mb-2 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm text-red-600 dark:text-red-400">
+                      Recording: {Math.floor(recordingTime / 60)}:
+                      {(recordingTime % 60).toString().padStart(2, '0')}
+                    </span>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={stopVoiceRecording}
+                    className="text-red-600 border-red-600 hover:bg-red-50"
+                  >
+                    <Square className="h-3 w-3" />
+                    Stop
+                  </Button>
+                </div>
+              )}
+              
               <div className="flex items-center gap-2">
                 <DropdownMenu open={showAttachmentOptions} onOpenChange={setShowAttachmentOptions}>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="text-gray-500">
+                    <Button variant="ghost" size="icon" className="text-gray-500 dark:text-gray-400">
                       <Paperclip className="h-5 w-5" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="bg-white border shadow-lg">
+                  <DropdownMenuContent align="start" className="bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-lg">
                     <DropdownMenuItem onClick={() => handleAttachment("Photo")}>
                       <Image className="h-4 w-4 mr-2" /> Photo
                     </DropdownMenuItem>
@@ -628,7 +883,7 @@ const Messages = () => {
                 </DropdownMenu>
                 <Input
                   placeholder="Type a message..."
-                  className="flex-1"
+                  className="flex-1 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                   value={currentMessage}
                   onChange={(e) => setCurrentMessage(e.target.value)}
                   onKeyDown={(e) => {
@@ -638,13 +893,18 @@ const Messages = () => {
                     }
                   }}
                 />
-                <Button variant="ghost" size="icon" className="text-gray-500" onClick={handleVoiceMessage}>
-                  <Mic className="h-5 w-5" />
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className={`text-gray-500 dark:text-gray-400 ${isRecording ? 'bg-red-100 dark:bg-red-900/20' : ''}`}
+                  onClick={handleVoiceMessage}
+                >
+                  <Mic className={`h-5 w-5 ${isRecording ? 'text-red-500' : ''}`} />
                 </Button>
                 <Button
                   onClick={handleSendMessage}
                   disabled={!currentMessage.trim()}
-                  className="bg-hospital-primary"
+                  className="bg-hospital-primary hover:bg-hospital-primary/90"
                 >
                   <Send className="h-5 w-5" />
                 </Button>
@@ -652,12 +912,12 @@ const Messages = () => {
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex items-center justify-center bg-gray-50">
+          <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-900">
             <div className="text-center">
-              <h3 className="text-lg font-medium text-gray-700">
+              <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300">
                 Select a contact to start a conversation
               </h3>
-              <p className="text-gray-500">
+              <p className="text-gray-500 dark:text-gray-400">
                 Choose from your contacts list on the left
               </p>
             </div>

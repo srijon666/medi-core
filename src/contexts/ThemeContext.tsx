@@ -45,9 +45,15 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       setActualTheme(resolvedTheme);
       
+      // Remove existing theme classes
       root.classList.remove('light', 'dark');
+      // Add the resolved theme class
       root.classList.add(resolvedTheme);
       
+      // Set data attribute for better CSS targeting
+      root.setAttribute('data-theme', resolvedTheme);
+      
+      // Store theme preference
       localStorage.setItem('theme', newTheme);
     };
 
