@@ -306,7 +306,6 @@ const Messages = () => {
             videoRef.current.play();
           }
           
-          // Create a canvas to capture the photo
           const canvas = document.createElement('canvas');
           const context = canvas.getContext('2d');
           
@@ -318,15 +317,15 @@ const Messages = () => {
               
               canvas.toBlob((blob) => {
                 if (blob) {
-                  const file = new File([blob], `camera-${Date.now()}.jpg`, { type: 'image/jpeg' });
+                  const fileName = `camera-${Date.now()}.jpg`;
+                  const file = new File([blob], fileName, { type: 'image/jpeg' });
                   handleFileUpload(file, 'image');
                 }
               }, 'image/jpeg', 0.8);
               
-              // Stop the camera stream
               stream.getTracks().forEach(track => track.stop());
             }
-          }, 3000); // Capture after 3 seconds
+          }, 3000);
           
           toast({
             title: "Camera Activated",
@@ -460,7 +459,7 @@ const Messages = () => {
 
       recorder.onstop = () => {
         const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-        const audioFile = new File([audioBlob], `voice-message-${Date.now()}.wav`, { type: 'audio/wav' });
+        const fileName = `voice-message-${Date.now()}.wav`;
         
         if (selectedContactId) {
           const voiceMessage: Message = {
@@ -480,7 +479,6 @@ const Messages = () => {
           setMessages(prev => [...prev, voiceMessage]);
         }
         
-        // Clean up
         stream.getTracks().forEach(track => track.stop());
         setRecordingTime(0);
       };
@@ -489,7 +487,6 @@ const Messages = () => {
       setMediaRecorder(recorder);
       setIsRecording(true);
       
-      // Start recording timer
       const interval = setInterval(() => {
         setRecordingTime(prev => prev + 1);
       }, 1000);
