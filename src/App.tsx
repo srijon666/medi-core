@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import Layout from "./components/layout/Layout";
 import Dashboard from "./pages/Dashboard";
 import Patients from "./pages/Patients";
@@ -40,134 +41,136 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          {/* Public routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp />} />
-          
-          {/* Protected routes with layout */}
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/patients"
-            element={
-              <ProtectedRoute>
-                <Patients />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/doctors"
-            element={
-              <ProtectedRoute>
-                <Doctors />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/appointments"
-            element={
-              <ProtectedRoute>
-                <Appointments />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/records"
-            element={
-              <ProtectedRoute>
-                <Records />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/pharmacy"
-            element={
-              <ProtectedRoute>
-                <Pharmacy />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/reports"
-            element={
-              <ProtectedRoute>
-                <Reports />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/schedule"
-            element={
-              <ProtectedRoute>
-                <Schedule />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/messages"
-            element={
-              <ProtectedRoute>
-                <Messages />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/notifications"
-            element={
-              <ProtectedRoute>
-                <Notifications />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute>
-                <Settings />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/book-bed"
-            element={
-              <ProtectedRoute>
-                <BookBed />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/revenue"
-            element={
-              <ProtectedRoute>
-                <Revenue />
-              </ProtectedRoute>
-            }
-          />
-          
-          {/* 404 route */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <ThemeProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<SignUp />} />
+            
+            {/* Protected routes with layout */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/patients"
+              element={
+                <ProtectedRoute>
+                  <Patients />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/doctors"
+              element={
+                <ProtectedRoute>
+                  <Doctors />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/appointments"
+              element={
+                <ProtectedRoute>
+                  <Appointments />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/records"
+              element={
+                <ProtectedRoute>
+                  <Records />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pharmacy"
+              element={
+                <ProtectedRoute>
+                  <Pharmacy />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reports"
+              element={
+                <ProtectedRoute>
+                  <Reports />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/schedule"
+              element={
+                <ProtectedRoute>
+                  <Schedule />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/messages"
+              element={
+                <ProtectedRoute>
+                  <Messages />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <Notifications />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/book-bed"
+              element={
+                <ProtectedRoute>
+                  <BookBed />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/revenue"
+              element={
+                <ProtectedRoute>
+                  <Revenue />
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* 404 route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

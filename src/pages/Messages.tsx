@@ -76,6 +76,7 @@ const Messages = () => {
   const [showAttachmentOptions, setShowAttachmentOptions] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showContactInfo, setShowContactInfo] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const currentUserId = "user1";
   
@@ -269,11 +270,118 @@ const Messages = () => {
   };
 
   const handleAttachment = (type: string) => {
-    toast({
-      title: "Attachment Feature",
-      description: `${type} attachment selected. This feature is in development.`,
-    });
+    if (!selectedContactId) return;
+
+    switch (type) {
+      case "Photo":
+        if (fileInputRef.current) {
+          fileInputRef.current.accept = "image/*";
+          fileInputRef.current.click();
+        }
+        break;
+      case "Document":
+        if (fileInputRef.current) {
+          fileInputRef.current.accept = ".pdf,.doc,.docx,.txt";
+          fileInputRef.current.click();
+        }
+        break;
+      case "Camera":
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          navigator.mediaDevices.getUserMedia({ video: true })
+            .then(() => {
+              toast({
+                title: "Camera Access",
+                description: "Camera functionality is in development.",
+              });
+            })
+            .catch(() => {
+              toast({
+                title: "Camera Error",
+                description: "Unable to access camera.",
+                variant: "destructive",
+              });
+            });
+        }
+        break;
+      case "Location":
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const locationMessage: Message = {
+                id: `msg${messages.length + 1}`,
+                senderId: currentUserId,
+                receiverId: selectedContactId,
+                text: `Shared location: ${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`,
+                timestamp: new Date(),
+                status: "sent",
+                attachments: [{
+                  type: "location",
+                  url: `https://maps.google.com/?q=${position.coords.latitude},${position.coords.longitude}`,
+                  name: "Current Location"
+                }]
+              };
+              setMessages(prev => [...prev, locationMessage]);
+              toast({
+                title: "Location Shared",
+                description: "Your current location has been shared.",
+              });
+            },
+            () => {
+              toast({
+                title: "Location Error",
+                description: "Unable to access your location.",
+                variant: "destructive",
+              });
+            }
+          );
+        }
+        break;
+    }
     setShowAttachmentOptions(false);
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && selectedContactId) {
+      const fileMessage: Message = {
+        id: `msg${messages.length + 1}`,
+        senderId: currentUserId,
+        receiverId: selectedContactId,
+        text: `Shared ${file.type.includes('image') ? 'photo' : 'document'}: ${file.name}`,
+        timestamp: new Date(),
+        status: "sent",
+        attachments: [{
+          type: file.type.includes('image') ? "image" : "file",
+          url: URL.createObjectURL(file),
+          name: file.name,
+          size: (file.size / (1024 * 1024)).toFixed(2) + " MB"
+        }]
+      };
+      setMessages(prev => [...prev, fileMessage]);
+      toast({
+        title: "File Attached",
+        description: `${file.name} has been shared.`,
+      });
+    }
+  };
+
+  const handleVoiceMessage = () => {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(() => {
+          toast({
+            title: "Voice Message",
+            description: "Voice message functionality is in development.",
+          });
+        })
+        .catch(() => {
+          toast({
+            title: "Microphone Error",
+            description: "Unable to access microphone.",
+            variant: "destructive",
+          });
+        });
+    }
   };
 
   useEffect(() => {
@@ -294,6 +402,13 @@ const Messages = () => {
 
   return (
     <div className="h-[calc(100vh-10rem)] flex flex-col">
+      <input
+        ref={fileInputRef}
+        type="file"
+        className="hidden"
+        onChange={handleFileSelect}
+      />
+      
       <div className="flex-1 flex overflow-hidden">
         <div className="w-full md:w-72 lg:w-80 border-r flex flex-col">
           <div className="p-4 border-b bg-white">
@@ -496,7 +611,7 @@ const Messages = () => {
                       <Paperclip className="h-5 w-5" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start">
+                  <DropdownMenuContent align="start" className="bg-white border shadow-lg">
                     <DropdownMenuItem onClick={() => handleAttachment("Photo")}>
                       <Image className="h-4 w-4 mr-2" /> Photo
                     </DropdownMenuItem>
@@ -523,7 +638,7 @@ const Messages = () => {
                     }
                   }}
                 />
-                <Button variant="ghost" size="icon" className="text-gray-500">
+                <Button variant="ghost" size="icon" className="text-gray-500" onClick={handleVoiceMessage}>
                   <Mic className="h-5 w-5" />
                 </Button>
                 <Button

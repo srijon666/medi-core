@@ -1,5 +1,6 @@
 
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -38,6 +39,8 @@ const statusConfig = {
 };
 
 const AppointmentList: React.FC<AppointmentListProps> = ({ appointments }) => {
+  const navigate = useNavigate();
+
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -86,7 +89,10 @@ const AppointmentList: React.FC<AppointmentListProps> = ({ appointments }) => {
           )}
           
           {appointments.length > 0 && (
-            <button className="w-full text-hospital-primary text-sm font-medium hover:text-hospital-accent mt-2">
+            <button 
+              className="w-full text-hospital-primary text-sm font-medium hover:text-hospital-accent mt-2"
+              onClick={() => navigate('/appointments')}
+            >
               View all appointments
             </button>
           )}

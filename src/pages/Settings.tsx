@@ -44,9 +44,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const Settings = () => {
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -131,10 +133,18 @@ const Settings = () => {
 
   // Handle appearance changes
   const handleAppearanceChange = (setting: string, value: any) => {
-    setAppearanceSettings((prev) => ({
-      ...prev,
-      [setting]: value,
-    }));
+    if (setting === "theme") {
+      setTheme(value);
+      toast({
+        title: "Theme Updated",
+        description: `Theme changed to ${value}.`,
+      });
+    } else {
+      setAppearanceSettings((prev) => ({
+        ...prev,
+        [setting]: value,
+      }));
+    }
   };
 
   // Handle file selection
@@ -638,8 +648,8 @@ const Settings = () => {
                 <h3 className="text-lg font-medium">Theme</h3>
                 <div className="grid grid-cols-3 gap-2">
                   <div
-                    className={`border rounded-lg p-4 flex flex-col items-center cursor-pointer ${
-                      appearanceSettings.theme === "light" ? "border-primary bg-accent" : "border-gray-200"
+                    className={`border rounded-lg p-4 flex flex-col items-center cursor-pointer relative ${
+                      theme === "light" ? "border-primary bg-accent" : "border-gray-200"
                     }`}
                     onClick={() => handleAppearanceChange("theme", "light")}
                   >
@@ -647,13 +657,13 @@ const Settings = () => {
                       <Sun className="h-6 w-6 text-yellow-500" />
                     </div>
                     <span>Light</span>
-                    {appearanceSettings.theme === "light" && (
+                    {theme === "light" && (
                       <Check className="h-4 w-4 text-primary absolute top-2 right-2" />
                     )}
                   </div>
                   <div
-                    className={`border rounded-lg p-4 flex flex-col items-center cursor-pointer ${
-                      appearanceSettings.theme === "dark" ? "border-primary bg-accent" : "border-gray-200"
+                    className={`border rounded-lg p-4 flex flex-col items-center cursor-pointer relative ${
+                      theme === "dark" ? "border-primary bg-accent" : "border-gray-200"
                     }`}
                     onClick={() => handleAppearanceChange("theme", "dark")}
                   >
@@ -661,13 +671,13 @@ const Settings = () => {
                       <Moon className="h-6 w-6 text-gray-300" />
                     </div>
                     <span>Dark</span>
-                    {appearanceSettings.theme === "dark" && (
+                    {theme === "dark" && (
                       <Check className="h-4 w-4 text-primary absolute top-2 right-2" />
                     )}
                   </div>
                   <div
-                    className={`border rounded-lg p-4 flex flex-col items-center cursor-pointer ${
-                      appearanceSettings.theme === "system" ? "border-primary bg-accent" : "border-gray-200"
+                    className={`border rounded-lg p-4 flex flex-col items-center cursor-pointer relative ${
+                      theme === "system" ? "border-primary bg-accent" : "border-gray-200"
                     }`}
                     onClick={() => handleAppearanceChange("theme", "system")}
                   >
@@ -675,7 +685,7 @@ const Settings = () => {
                       <Laptop className="h-6 w-6 text-blue-500" />
                     </div>
                     <span>System</span>
-                    {appearanceSettings.theme === "system" && (
+                    {theme === "system" && (
                       <Check className="h-4 w-4 text-primary absolute top-2 right-2" />
                     )}
                   </div>
