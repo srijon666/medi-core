@@ -318,8 +318,7 @@ const Messages = () => {
               canvas.toBlob((blob) => {
                 if (blob) {
                   const fileName = `camera-${Date.now()}.jpg`;
-                  const file = new File([blob], fileName, { type: 'image/jpeg' });
-                  handleFileUpload(file, 'image');
+                  handleBlobUpload(blob, fileName, 'image');
                 }
               }, 'image/jpeg', 0.8);
               
@@ -387,6 +386,30 @@ const Messages = () => {
         break;
     }
     setShowAttachmentOptions(false);
+  };
+
+  const handleBlobUpload = (blob: Blob, fileName: string, type: 'image' | 'file') => {
+    if (selectedContactId) {
+      const fileMessage: Message = {
+        id: `msg${messages.length + 1}`,
+        senderId: currentUserId,
+        receiverId: selectedContactId,
+        text: `${type === 'image' ? '📷' : '📄'} ${fileName}`,
+        timestamp: new Date(),
+        status: "sent",
+        attachments: [{
+          type: type,
+          url: URL.createObjectURL(blob),
+          name: fileName,
+          size: (blob.size / (1024 * 1024)).toFixed(2) + " MB"
+        }]
+      };
+      setMessages(prev => [...prev, fileMessage]);
+      toast({
+        title: `${type === 'image' ? 'Photo' : 'Document'} Attached`,
+        description: `${fileName} has been shared successfully.`,
+      });
+    }
   };
 
   const handleFileUpload = (file: File, type: 'image' | 'file') => {
